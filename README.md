@@ -28,6 +28,12 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
+Download spaCy languages (needed for lemmatization):
+```
+python -m spacy download it_core_news_sm
+python -m spacy download en_core_web_sm
+```
+
 ## Usage
 
 Command:
@@ -42,9 +48,9 @@ python text_analysis.py "/home/piero/data/DfE_Dataset_Corriere_1600_Danilo - For
 
 For more parameters check:
 ```
-usage: text_analysis.py [-h] [-l LANGUAGE] [-nr NGRAM_RANGE] [-w NUM_WORDS]
-                        [-t NUM_TOPICS] [-wc WORDCLOUD_FILENAME]
-                        [-fw FREQUENT_WORDS_FILENAME]
+usage: text_analysis.py [-h] [-l LANGUAGE] [-lm] [-nr NGRAM_RANGE]
+                        [-w NUM_WORDS] [-t NUM_TOPICS]
+                        [-wc WORDCLOUD_FILENAME] [-fw FREQUENT_WORDS_FILENAME]
                         [-fwp FREQUENT_WORDS_PLOT_FILENAME]
                         [-ttw TOP_TFIDF_WORDS_FILENAME]
                         [-ttwp TOP_TFIDF_WORDS_PLOT_FILENAME]
@@ -64,6 +70,7 @@ optional arguments:
   -l LANGUAGE, --language LANGUAGE
                         language of the text in the data (for data cleaning
                         purposes)
+  -lm, --lemmatize      performs lemmatization of all texts
   -nr NGRAM_RANGE, --ngram_range NGRAM_RANGE
                         minimum and maximum value for ngrams, specify as
                         "min,max"
@@ -95,8 +102,6 @@ optional arguments:
   -o OUTPUT_PATH, --output_path OUTPUT_PATH
                         path that will contain all directories, one for each
                         column
-
-
 ```
 
 ## Outputs

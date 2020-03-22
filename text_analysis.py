@@ -38,6 +38,24 @@ def clean_data(data_df):
 
     return data_df
 
+###########
+# lemmatize
+###########
+def lemmatize(data_df, language):
+    import spacy
+
+    language_map = {
+        'it' : 'it_core_news_sm',
+        'en': 'it_core_web_sm'
+    }
+
+    nlp = spacy.load(language_map[language])
+
+    def text2lemmas(text):
+        return ' '.join(token.lemma_ for token in nlp(text))
+
+    data_df = data_df.map(text2lemmas)
+    return data_df
 
 #################
 # plot word cloud
@@ -264,6 +282,7 @@ def text_analysis(
         data_path,
         column,
         language,
+        lemmatize,
         ngram_range,
         num_topics,
         num_words,
@@ -289,6 +308,13 @@ def text_analysis(
     print("Clean data sample")
     print(data_df.head())
     print()
+
+    if lemmatize:
+        print("Lemmatizing data...")
+        data_df = lemmatize(data_df, language)
+        print("Lemmatized data sample")
+        print(data_df.head())
+        print()
 
     print("Generating word cloud...")
     plot_word_cloud(data_df, wordcloud_filename, language)
@@ -409,6 +435,12 @@ if __name__ == '__main__':
         default='it'
     )
     parser.add_argument(
+        '-lm',
+        '--lemmatize',
+        action='store_true',
+        help='performs lemmatization of all texts',
+    )
+    parser.add_argument(
         '-nr',
         '--ngram_range',
         type=str,
@@ -455,14 +487,14 @@ if __name__ == '__main__':
         '--top_tfidf_words_filename',
         type=str,
         help='path to save top tfidf words to',
-        default='frequent_words.json'
+        default='top_tfidf_words.json'
     )
     parser.add_argument(
         '-ttwp',
         '--top_tfidf_words_plot_filename',
         type=str,
         help='path to save the top tfidf word plot to',
-        default='frequent_words.png'
+        default='top_tfidf_words.png'
     )
     parser.add_argument(
         '-tp',
@@ -552,6 +584,7 @@ if __name__ == '__main__':
             data_path=args.data_path,
             column=column,
             language=args.language,
+            lemmatize=lemmatize,
             ngram_range=ngram_range,
             num_topics=args.num_topics,
             num_words=args.num_words,
