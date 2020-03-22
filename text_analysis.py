@@ -7,6 +7,7 @@ STOPWORDS_FILE = 'all_stopwords.json'
 with open(STOPWORDS_FILE, encoding="utf8") as json_data:
     stopwords = json.load(json_data)
 
+
 ###########
 # load data
 ###########
@@ -86,12 +87,18 @@ def most_frequent_words(count_data, count_vectorizer, n_top_words):
     )[0:n_top_words]
     return word_count_pair_list
 
+##########################
+# save most frequent words
+##########################
+def save_frequent_words(word_count_pair_list, frequent_words_path):
+    word_count_dict = {w: int(c) for w, c in word_count_pair_list}
+    with open(frequent_words_path, "w", encoding="utf8") as f:
+        json.dump(word_count_dict, f)
 
 ##########################
 # plot most frequent words
 ##########################
-def plot_most_frequent_words(count_data, count_vectorizer, num_words,
-                             frequent_words_plot_path):
+def plot_most_frequent_words(word_count_pair_list, frequent_words_plot_path):
     import numpy as np
     import matplotlib.pyplot as plt
     import seaborn as sns
@@ -100,24 +107,17 @@ def plot_most_frequent_words(count_data, count_vectorizer, num_words,
     plt.xticks(fontsize=14)
     plt.xticks(fontsize=14)
 
-    # helper function
-    def plot_words(word_count_pair_list, output_path):
-        words = [w[0] for w in word_count_pair_list]
-        counts = [w[1] for w in word_count_pair_list]
-        x_pos = np.arange(len(words))
+    words = [w[0] for w in word_count_pair_list]
+    counts = [w[1] for w in word_count_pair_list]
+    x_pos = np.arange(len(words))
 
-        plt.figure(2, figsize=(15, 15 / 1.6180))
-        plt.subplot(title='Most common words')
-        sns.barplot(x_pos, counts)
-        plt.xticks(x_pos, words, rotation=90)
-        plt.xlabel('words')
-        plt.ylabel('counts')
-        plt.savefig(output_path)
-
-    # Visualise the 10 most common words
-    word_count_pair_list = most_frequent_words(count_data, count_vectorizer,
-                                               num_words)
-    plot_words(word_count_pair_list, frequent_words_plot_path)
+    plt.figure(2, figsize=(15, 15 / 1.6180))
+    plt.subplot(title='Most common words')
+    sns.barplot(x_pos, counts)
+    plt.xticks(x_pos, words, rotation=90)
+    plt.xlabel('words')
+    plt.ylabel('counts')
+    plt.savefig(frequent_words_plot_path)
 
 
 ###################
@@ -143,6 +143,19 @@ def print_topics(model, count_vectorizer, n_top_words):
         print(" ".join([words[i]
                         for i in topic.argsort()[:-n_top_words - 1:-1]]))
 
+#############
+# save topics
+#############
+def save_topics(model, count_vectorizer, topics_path):
+    topics = {}
+    words = count_vectorizer.get_feature_names()
+    for topic_idx, topic in enumerate(model.components_):
+        topics["topic_" + str(topic_idx + 1)] = {
+            words[i]: s for i, s in enumerate(topic)
+        }
+    with open(topics_path, "w", encoding="utf8") as f:
+        json.dump(topics, f)
+
 #####################################
 # save predicted topics per datapoint
 #####################################
@@ -152,6 +165,7 @@ def save_predicted_topics(predicted_topics, predicted_topics_path):
         columns=["topic_" + str(i + 1) for i in range(predicted_topics.shape[1])]
     )
     predicted_topics_df.to_csv(predicted_topics_path, index=False)
+
 
 #######################
 # visualize topic model
@@ -183,7 +197,9 @@ def text_analysis(
         num_topics,
         num_words,
         wordcloud_path,
+        frequent_words_path,
         frequent_words_plot_path,
+        topics_path,
         predicted_topics_path,
         ldavis_path,
 ):
@@ -206,10 +222,19 @@ def text_analysis(
 
     count_vectorizer, count_data = get_vectorizer_and_count_data(data_df,
                                                                  language)
+    word_count_pair_list = most_frequent_words(count_data, count_vectorizer,
+                                               num_words)
+
+    print("Saving frequent words...")
+    save_frequent_words(
+        most_frequent_words(count_data, count_vectorizer, count_data.shape[0]),
+        frequent_words_path
+    )
+    print("Frequent words saved to:", frequent_words_path)
+    print()
 
     print("Generating frequent word plot...")
-    plot_most_frequent_words(count_data, count_vectorizer, num_words,
-                             frequent_words_plot_path)
+    plot_most_frequent_words(word_count_pair_list, frequent_words_plot_path)
     print("Frequent word plot saved to:", frequent_words_plot_path)
     print()
 
@@ -217,6 +242,9 @@ def text_analysis(
     lda, predicted_topics = learn_topic_model(count_data, num_topics)
     print("Topics found via LDA:")
     print_topics(lda, count_vectorizer, num_words)
+    print("Saving topics...")
+    save_topics(lda, count_vectorizer, topics_path)
+    print("Topics saved to:", topics_path)
     print("Saving predicted topics...")
     save_predicted_topics(predicted_topics, predicted_topics_path)
     print("Predicted topics saved to:", predicted_topics_path)
@@ -274,10 +302,24 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '-fw',
+        '--frequent_words_path',
+        type=str,
+        help='path to save frequent words to',
+        default='frequent_words.json'
+    )
+    parser.add_argument(
+        '-fwp',
         '--frequent_words_plot_path',
         type=str,
         help='path to save the frequent word plot to',
         default='frequent_words.png'
+    )
+    parser.add_argument(
+        '-tp',
+        '--topics_path',
+        type=str,
+        help='path to save frequent words to',
+        default='topics.json'
     )
     parser.add_argument(
         '-pt',
