@@ -333,7 +333,7 @@ if __name__ == '__main__':
         '--ldavis_path',
         type=str,
         help='path (prefix) to save LDA vis plot files to',
-        default='ldavis_prepared_'
+        default='ldavis_'
     )
     args = parser.parse_args()
     text_analysis(**vars(args))
