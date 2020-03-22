@@ -42,13 +42,15 @@ python text_analysis.py "/home/piero/data/DfE_Dataset_Corriere_1600_Danilo - For
 
 For more parameters check:
 ```
-python text_analysis.py  -h
-```
+usage: text_analysis.py [-h] [-l LANGUAGE] [-w NUM_WORDS] [-t NUM_TOPICS]
+                        [-wc WORDCLOUD_FILENAME] [-fw FREQUENT_WORDS_FILENAME]
+                        [-fwp FREQUENT_WORDS_PLOT_FILENAME]
+                        [-tp TOPICS_FILENAME] [-pt PREDICTED_TOPICS_FILENAME]
+                        [-lv LDAVIS_FILENAME_PREFIX] [-s]
+                        [-ps PREDICTED_SENTIMENT_FILENAME] [-o OUTPUT_PATH]
+                        data_path columns [columns ...]
 
-```
-usage: ludwig train [options]
-
-This script trains a model
+This script analyzes text in columns of a TSV file
 
 positional arguments:
   data_path             path to the data TSV
@@ -76,9 +78,14 @@ optional arguments:
                         to
   -lv LDAVIS_FILENAME_PREFIX, --ldavis_filename_prefix LDAVIS_FILENAME_PREFIX
                         path (prefix) to save LDA vis plot files to
+  -s, --predict_sentiment
+                        performs sentiment analysis (it is pretty slow)
+  -ps PREDICTED_SENTIMENT_FILENAME, --predicted_sentiment_filename PREDICTED_SENTIMENT_FILENAME
+                        path to save predicted sentiment for each datapoint to
   -o OUTPUT_PATH, --output_path OUTPUT_PATH
                         path that will contain all directories, one for each
                         column
+
 ```
 
 ## Outputs
@@ -89,7 +96,8 @@ The script outputs one directory for each column spacified, contaning the follow
 - `frequent_words_filename` (`frequent_words.json`): a JSON file contaning all non-stopword words in the text in the specified column with their respective frequency
 - `frequent_words_plot_filename` (`frequent_words.png`): a PNG file containing a plot of top k most frequent non-stopword words in the text of the column
 - `topics_filename` (`topics.json`): a JSON file containing, for each topic, for each word, the probability of that word given that topic
-- `predicted_topics_filename` (`predicted_topics.csv`): a CSV file containing one column for each topic, and for each row in the input TSV file, the robability that the text in the input files column belongs to each topic
+- `predicted_topics_filename` (`predicted_topics.csv`): a CSV file containing one column for each topic, and for each row in the input TSV file, the probability that the text in the input files column belongs to each topic
 - `ldavis_filename_prefix` (`ldavis_`):
   - `ldavis_filename_prefix_N`: N is the number of topics. This file is a Python pickle file contaning the data to generate an HTML LDA visualization
   - `ldavis_filename_prefix_N.html`: a HTML visualization of the LDA topic distribution
+- `predicted_sentiment_filename` ('predicted_sentiment.csv`): a CSV file containing a positive and a negative column and for each row in the original TSV file a 1 or 0 values (when two ones are there it means ambivalent, when two zeros are present, it mean neutral). This is returned only if `--predict_sentiment` is provided, as calculating the sentiment can be pretty slow)

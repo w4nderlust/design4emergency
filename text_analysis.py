@@ -7,6 +7,7 @@ STOPWORDS_FILE = 'all_stopwords.json'
 with open(STOPWORDS_FILE, encoding="utf8") as json_data:
     stopwords = json.load(json_data)
 
+PARALLEL_DOTS_KEY = ''
 
 ###########
 # load data
@@ -194,6 +195,52 @@ def visualize_topic_model(lda, count_data, count_vectorizer,
         ldavis_prepared = pickle.load(f)
         pyLDAvis.save_html(ldavis_prepared, ldavis_html_path)
 
+###############################################
+# predict sentiment with paralleldots (english)
+###############################################
+def predict_sentiment_with_paralleldots(data_df):
+    import paralleldots
+    # Setting your API key
+    paralleldots.set_api_key(PARALLEL_DOTS_KEY)
+    texts_list = data_df.tolist()[:3]
+    result = paralleldots.sentiment(texts_list)
+    return result['sentiment']
+
+###############################################
+# predict sentiment with alberto (italian)
+###############################################
+def predict_sentiment_with_alberto(data_df):
+    import requests
+    positive_url = "http://193.204.187.35:50000/api/alberto_pos_tw"
+    negative_url = "http://193.204.187.35:50000/api/alberto_neg_tw"
+
+    predicted_sentiment = {'positive': [], 'negative': []}
+    data = {'messages': data_df.tolist()[:3]}
+    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+
+    positive_response = requests.post(positive_url, data=json.dumps(data),
+                                      headers=headers)
+    positive_response = positive_response.json()
+    for elem in positive_response['results']:
+        predicted_sentiment['positive'].append(elem['class'])
+
+    negative_response = requests.post(negative_url, data=json.dumps(data),
+                                      headers=headers)
+    negative_response = negative_response.json()
+    for elem in negative_response['results']:
+        predicted_sentiment['negative'].append(elem['class'])
+
+    return predicted_sentiment
+
+
+################
+# save sentiment
+################
+def save_sentiment(predicted_sentiment, predicted_sentiment_filename):
+    predicted_sentiment_df = pd.DataFrame(
+        data=predicted_sentiment
+    )
+    predicted_sentiment_df.to_csv(predicted_sentiment_filename, index=False)
 
 def text_analysis(
         data_path,
@@ -207,6 +254,8 @@ def text_analysis(
         topics_filename,
         predicted_topics_filename,
         ldavis_filename_prefix,
+        predict_sentiment,
+        predicted_sentiment_filename,
 ):
     print("Loading data...")
     data_df = load_data(data_path, column)
@@ -260,6 +309,22 @@ def text_analysis(
                           num_topics, ldavis_filename_prefix)
     print("LDA visualization saved to:", ldavis_filename_prefix)
 
+    if predict_sentiment:
+        if language == 'it':
+            print("Predict sentiment...")
+            predicted_sentiment = predict_sentiment_with_alberto(data_df)
+            save_sentiment(predicted_sentiment, predicted_sentiment_filename)
+            print("Predict sentiment saved to:", predicted_sentiment_filename)
+            print()
+        elif language == 'en':
+            print("Predict sentiment...")
+            predicted_sentiment = predict_sentiment_with_paralleldots(data_df)
+            save_sentiment(predicted_sentiment, predicted_sentiment_filename)
+            print("Predict sentiment saved to:", predicted_sentiment_filename)
+            print()
+        else:
+            print("Sentiment analysis on {} language is not supported")
+
 
 def format_filename(s):
     import string
@@ -282,9 +347,7 @@ def format_filename(s):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='This script trains a model',
-        prog='ludwig train',
-        usage='%(prog)s [options]'
+        description='This script analyzes text in columns of a TSV file'
     )
     parser.add_argument(
         'data_path',
@@ -361,6 +424,19 @@ if __name__ == '__main__':
         default='ldavis_'
     )
     parser.add_argument(
+        '-s',
+        '--predict_sentiment',
+        action='store_true',
+        help='performs sentiment analysis (it is pretty slow)',
+    )
+    parser.add_argument(
+        '-ps',
+        '--predicted_sentiment_filename',
+        type=str,
+        help='path to save predicted sentiment for each datapoint to',
+        default='predicted_sentiment.csv'
+    )
+    parser.add_argument(
         '-o',
         '--output_path',
         type=str,
@@ -392,6 +468,9 @@ if __name__ == '__main__':
         ldavis_filename_prefix = os.path.join(
             args.output_path, column_dir, args.ldavis_filename_prefix
         )
+        predicted_sentiment_filename = os.path.join(
+            args.output_path, column_dir, args.predicted_sentiment_filename
+        )
 
         text_analysis(
             data_path=args.data_path,
@@ -404,5 +483,7 @@ if __name__ == '__main__':
             frequent_words_plot_filename=frequent_words_plot_filename,
             topics_filename=topics_filename,
             predicted_topics_filename=predicted_topics_filename,
-            ldavis_filename_prefix=ldavis_filename_prefix
+            ldavis_filename_prefix=ldavis_filename_prefix,
+            predict_sentiment=args.predict_sentiment,
+            predicted_sentiment_filename=predicted_sentiment_filename
         )
