@@ -153,7 +153,7 @@ def visualize_topic_model(lda, count_data, count_vectorizer,
     import pyLDAvis
 
     ldavis_data_path = os.path.join(ldavis_path + str(num_topics))
-    lbavis_html_path = ldavis_path + str(num_topics) + '.html'
+    ldavis_html_path = ldavis_path + str(num_topics) + '.html'
     # this is a bit time consuming - make the if statement True
     # if you want to execute visualization prep yourself
     ldavis_prepared = sklearn_lda.prepare(lda, count_data, count_vectorizer)
@@ -163,7 +163,7 @@ def visualize_topic_model(lda, count_data, count_vectorizer,
     # load the pre-prepared pyLDAvis data from disk
     with open(ldavis_data_path, 'rb') as f:
         ldavis_prepared = pickle.load(f)
-        pyLDAvis.save_html(ldavis_prepared, lbavis_html_path)
+        pyLDAvis.save_html(ldavis_prepared, ldavis_html_path)
 
 
 def text_analysis(
