@@ -584,7 +584,7 @@ if __name__ == '__main__':
             data_path=args.data_path,
             column=column,
             language=args.language,
-            lemmatize=lemmatize,
+            lemmatize=args.lemmatize,
             ngram_range=ngram_range,
             num_topics=args.num_topics,
             num_words=args.num_words,
