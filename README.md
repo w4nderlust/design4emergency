@@ -42,9 +42,12 @@ python text_analysis.py "/home/piero/data/DfE_Dataset_Corriere_1600_Danilo - For
 
 For more parameters check:
 ```
-usage: text_analysis.py [-h] [-l LANGUAGE] [-w NUM_WORDS] [-t NUM_TOPICS]
-                        [-wc WORDCLOUD_FILENAME] [-fw FREQUENT_WORDS_FILENAME]
+usage: text_analysis.py [-h] [-l LANGUAGE] [-nr NGRAM_RANGE] [-w NUM_WORDS]
+                        [-t NUM_TOPICS] [-wc WORDCLOUD_FILENAME]
+                        [-fw FREQUENT_WORDS_FILENAME]
                         [-fwp FREQUENT_WORDS_PLOT_FILENAME]
+                        [-ttw TOP_TFIDF_WORDS_FILENAME]
+                        [-ttwp TOP_TFIDF_WORDS_PLOT_FILENAME]
                         [-tp TOPICS_FILENAME] [-pt PREDICTED_TOPICS_FILENAME]
                         [-lv LDAVIS_FILENAME_PREFIX] [-s]
                         [-ps PREDICTED_SENTIMENT_FILENAME] [-o OUTPUT_PATH]
@@ -61,6 +64,9 @@ optional arguments:
   -l LANGUAGE, --language LANGUAGE
                         language of the text in the data (for data cleaning
                         purposes)
+  -nr NGRAM_RANGE, --ngram_range NGRAM_RANGE
+                        minimum and maximum value for ngrams, specify as
+                        "min,max"
   -w NUM_WORDS, --num_words NUM_WORDS
                         number of most frequent words to show
   -t NUM_TOPICS, --num_topics NUM_TOPICS
@@ -71,6 +77,10 @@ optional arguments:
                         path to save frequent words to
   -fwp FREQUENT_WORDS_PLOT_FILENAME, --frequent_words_plot_filename FREQUENT_WORDS_PLOT_FILENAME
                         path to save the frequent word plot to
+  -ttw TOP_TFIDF_WORDS_FILENAME, --top_tfidf_words_filename TOP_TFIDF_WORDS_FILENAME
+                        path to save top tfidf words to
+  -ttwp TOP_TFIDF_WORDS_PLOT_FILENAME, --top_tfidf_words_plot_filename TOP_TFIDF_WORDS_PLOT_FILENAME
+                        path to save the top tfidf word plot to
   -tp TOPICS_FILENAME, --topics_filename TOPICS_FILENAME
                         path to save frequent words to
   -pt PREDICTED_TOPICS_FILENAME, --predicted_topics_filename PREDICTED_TOPICS_FILENAME
@@ -86,6 +96,7 @@ optional arguments:
                         path that will contain all directories, one for each
                         column
 
+
 ```
 
 ## Outputs
@@ -95,6 +106,8 @@ The script outputs one directory for each column spacified, contaning the follow
 - `wordcloud_filename` (`wordcloud.png`): a PNG file of a wordcloud of the text in the specified column
 - `frequent_words_filename` (`frequent_words.json`): a JSON file contaning all non-stopword words in the text in the specified column with their respective frequency
 - `frequent_words_plot_filename` (`frequent_words.png`): a PNG file containing a plot of top k most frequent non-stopword words in the text of the column
+- `top_tfidf_words_filename` (`top_tfidf_words.json`): a JSON file contaning all non-stopword words in the text in the specified column with their respective tfidf
+- `top_tfidf_words_plot_filename` (`top_tfidf_words.png`): a PNG file containing a plot of top k top tfidf non-stopword words in the text of the column
 - `topics_filename` (`topics.json`): a JSON file containing, for each topic, for each word, the probability of that word given that topic
 - `predicted_topics_filename` (`predicted_topics.csv`): a CSV file containing one column for each topic, and for each row in the input TSV file, the probability that the text in the input files column belongs to each topic
 - `ldavis_filename_prefix` (`ldavis_`):

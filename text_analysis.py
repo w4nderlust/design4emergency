@@ -9,6 +9,7 @@ with open(STOPWORDS_FILE, encoding="utf8") as json_data:
 
 PARALLEL_DOTS_KEY = ''
 
+
 ###########
 # load data
 ###########
@@ -61,13 +62,27 @@ def plot_word_cloud(data_df, wordcloud_filename, language):
     wordcloud.to_file(wordcloud_filename)
 
 
-###############################
-# get vectorizer and count data
-###############################
-def get_vectorizer_and_count_data(data_df, language):
+#####################################
+# get count vectorizer and count data
+#####################################
+def get_count_vectorizer_and_transformed_data(data_df, language, ngram_range):
     from sklearn.feature_extraction.text import CountVectorizer
     # Initialise the count vectorizer with the English stop words
-    count_vectorizer = CountVectorizer(stop_words=stopwords[language])
+    count_vectorizer = CountVectorizer(stop_words=stopwords[language],
+                                       ngram_range=ngram_range)
+    # Fit and transform the processed titles
+    count_data = count_vectorizer.fit_transform(data_df)
+    return count_vectorizer, count_data
+
+
+#####################################
+# get tfidf vectorizer and count data
+#####################################
+def get_tfidf_vectorizer_and_transformed_data(data_df, language, ngram_range):
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    # Initialise the count vectorizer with the English stop words
+    count_vectorizer = TfidfVectorizer(stop_words=stopwords[language],
+                                       ngram_range=ngram_range)
     # Fit and transform the processed titles
     count_data = count_vectorizer.fit_transform(data_df)
     return count_vectorizer, count_data
@@ -93,16 +108,16 @@ def most_frequent_words(count_data, count_vectorizer, n_top_words):
 ##########################
 # save most frequent words
 ##########################
-def save_frequent_words(word_count_pair_list, frequent_words_filename):
+def save_words(word_count_pair_list, frequent_words_filename):
     word_count_dict = {w: int(c) for w, c in word_count_pair_list}
     with open(frequent_words_filename, "w", encoding="utf8") as f:
-        json.dump(word_count_dict, f)
+        json.dump(word_count_dict, f, ensure_ascii=False)
 
 
 ##########################
 # plot most frequent words
 ##########################
-def plot_most_frequent_words(word_count_pair_list, frequent_words_plot_filename):
+def plot_top_words(word_count_pair_list, frequent_words_plot_filename):
     import numpy as np
     import matplotlib.pyplot as plt
     import seaborn as sns
@@ -159,7 +174,7 @@ def save_topics(model, count_vectorizer, topics_filename):
             words[i]: s for i, s in enumerate(topic)
         }
     with open(topics_filename, "w", encoding="utf8") as f:
-        json.dump(topics, f)
+        json.dump(topics, f, ensure_ascii=False)
 
 
 #####################################
@@ -195,6 +210,7 @@ def visualize_topic_model(lda, count_data, count_vectorizer,
         ldavis_prepared = pickle.load(f)
         pyLDAvis.save_html(ldavis_prepared, ldavis_html_path)
 
+
 ###############################################
 # predict sentiment with paralleldots (english)
 ###############################################
@@ -206,6 +222,7 @@ def predict_sentiment_with_paralleldots(data_df):
     result = paralleldots.sentiment(texts_list)
     return result['sentiment']
 
+
 ###############################################
 # predict sentiment with alberto (italian)
 ###############################################
@@ -215,7 +232,7 @@ def predict_sentiment_with_alberto(data_df):
     negative_url = "http://193.204.187.35:50000/api/alberto_neg_tw"
 
     predicted_sentiment = {'positive': [], 'negative': []}
-    data = {'messages': data_df.tolist()[:3]}
+    data = {'messages': data_df.tolist()}
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
     positive_response = requests.post(positive_url, data=json.dumps(data),
@@ -242,15 +259,19 @@ def save_sentiment(predicted_sentiment, predicted_sentiment_filename):
     )
     predicted_sentiment_df.to_csv(predicted_sentiment_filename, index=False)
 
+
 def text_analysis(
         data_path,
         column,
         language,
+        ngram_range,
         num_topics,
         num_words,
         wordcloud_filename,
         frequent_words_filename,
         frequent_words_plot_filename,
+        top_tfidf_words_filename,
+        top_tfidf_words_plot_filename,
         topics_filename,
         predicted_topics_filename,
         ldavis_filename_prefix,
@@ -274,13 +295,18 @@ def text_analysis(
     print("Wordcloud saved to:", wordcloud_filename)
     print()
 
-    count_vectorizer, count_data = get_vectorizer_and_count_data(data_df,
-                                                                 language)
-    word_count_pair_list = most_frequent_words(count_data, count_vectorizer,
-                                               num_words)
+    count_vectorizer, count_data = get_count_vectorizer_and_transformed_data(
+        data_df, language, ngram_range
+    )
+    word_count_pair_list = most_frequent_words(
+        count_data, count_vectorizer, num_words
+    )
+    tfidf_vectorizer, tfidf_data = get_tfidf_vectorizer_and_transformed_data(
+        data_df, language, ngram_range
+    )
 
     print("Saving frequent words...")
-    save_frequent_words(
+    save_words(
         most_frequent_words(count_data, count_vectorizer, count_data.shape[0]),
         frequent_words_filename
     )
@@ -288,16 +314,29 @@ def text_analysis(
     print()
 
     print("Generating frequent word plot...")
-    plot_most_frequent_words(word_count_pair_list, frequent_words_plot_filename)
+    plot_top_words(word_count_pair_list, frequent_words_plot_filename)
     print("Frequent word plot saved to:", frequent_words_plot_filename)
     print()
 
+    print("Saving top tfidf words...")
+    save_words(
+        most_frequent_words(tfidf_data, tfidf_vectorizer, tfidf_data.shape[0]),
+        top_tfidf_words_filename
+    )
+    print("Top tfidf words saved to:", top_tfidf_words_filename)
+    print()
+
+    print("Generating frequent word plot...")
+    plot_top_words(word_count_pair_list, top_tfidf_words_plot_filename)
+    print("Frequent word plot saved to:", top_tfidf_words_plot_filename)
+    print()
+
     print("Calculating topic model...")
-    lda, predicted_topics = learn_topic_model(count_data, num_topics)
+    lda, predicted_topics = learn_topic_model(tfidf_data, num_topics)
     print("Topics found via LDA:")
-    print_topics(lda, count_vectorizer, num_words)
+    print_topics(lda, tfidf_vectorizer, num_words)
     print("Saving topics...")
-    save_topics(lda, count_vectorizer, topics_filename)
+    save_topics(lda, tfidf_vectorizer, topics_filename)
     print("Topics saved to:", topics_filename)
     print("Saving predicted topics...")
     save_predicted_topics(predicted_topics, predicted_topics_filename)
@@ -305,9 +344,10 @@ def text_analysis(
     print()
 
     print("Generating LDA visualization...")
-    visualize_topic_model(lda, count_data, count_vectorizer,
+    visualize_topic_model(lda, count_data, tfidf_vectorizer,
                           num_topics, ldavis_filename_prefix)
     print("LDA visualization saved to:", ldavis_filename_prefix)
+    print()
 
     if predict_sentiment:
         if language == 'it':
@@ -324,6 +364,7 @@ def text_analysis(
             print()
         else:
             print("Sentiment analysis on {} language is not supported")
+            print()
 
 
 def format_filename(s):
@@ -368,6 +409,13 @@ if __name__ == '__main__':
         default='it'
     )
     parser.add_argument(
+        '-nr',
+        '--ngram_range',
+        type=str,
+        help='minimum and maximum value for ngrams, specify as "min,max"',
+        default="1,1"
+    )
+    parser.add_argument(
         '-w',
         '--num_words',
         type=int,
@@ -400,6 +448,20 @@ if __name__ == '__main__':
         '--frequent_words_plot_filename',
         type=str,
         help='path to save the frequent word plot to',
+        default='frequent_words.png'
+    )
+    parser.add_argument(
+        '-ttw',
+        '--top_tfidf_words_filename',
+        type=str,
+        help='path to save top tfidf words to',
+        default='frequent_words.json'
+    )
+    parser.add_argument(
+        '-ttwp',
+        '--top_tfidf_words_plot_filename',
+        type=str,
+        help='path to save the top tfidf word plot to',
         default='frequent_words.png'
     )
     parser.add_argument(
@@ -445,11 +507,19 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
+    ngram_range = (1, 1)
+    try:
+        ngram_range = tuple([int(s) for s in args.ngram_range.split(',')])
+    except:
+        print('ngram_range is not properly formatted: {}. '
+              'Please use the format "min,max"'.format(args.ngram_range))
+        exit(-1)
+
     for column in args.columns:
         column_dir = format_filename(column)
         if not os.path.exists(column_dir):
             os.makedirs(column_dir)
-            
+
         wordcloud_filename = os.path.join(
             args.output_path, column_dir, args.wordcloud_filename
         )
@@ -458,6 +528,12 @@ if __name__ == '__main__':
         )
         frequent_words_plot_filename = os.path.join(
             args.output_path, column_dir, args.frequent_words_plot_filename
+        )
+        top_tfidf_words_filename = os.path.join(
+            args.output_path, column_dir, args.top_tfidf_words_filename
+        )
+        top_tfidf_words_plot_filename = os.path.join(
+            args.output_path, column_dir, args.top_tfidf_words_plot_filename
         )
         topics_filename = os.path.join(
             args.output_path, column_dir, args.topics_filename
@@ -476,11 +552,14 @@ if __name__ == '__main__':
             data_path=args.data_path,
             column=column,
             language=args.language,
+            ngram_range=ngram_range,
             num_topics=args.num_topics,
             num_words=args.num_words,
             wordcloud_filename=wordcloud_filename,
             frequent_words_filename=frequent_words_filename,
             frequent_words_plot_filename=frequent_words_plot_filename,
+            top_tfidf_words_filename=top_tfidf_words_filename,
+            top_tfidf_words_plot_filename=top_tfidf_words_plot_filename,
             topics_filename=topics_filename,
             predicted_topics_filename=predicted_topics_filename,
             ldavis_filename_prefix=ldavis_filename_prefix,
