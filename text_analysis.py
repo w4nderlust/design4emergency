@@ -80,11 +80,11 @@ def most_frequent_words(count_data, count_vectorizer, n_top_words):
     total_counts = np.zeros(len(words))
     for t in count_data:
         total_counts += t.toarray()[0]
-    count_dict = (zip(words, total_counts))
-    count_dict = sorted(
-        count_dict, key=lambda x: x[1], reverse=True
+    word_count_pair_list = (zip(words, total_counts))
+    word_count_pair_list = sorted(
+        word_count_pair_list, key=lambda x: x[1], reverse=True
     )[0:n_top_words]
-    return count_dict
+    return word_count_pair_list
 
 
 ##########################
@@ -101,9 +101,9 @@ def plot_most_frequent_words(count_data, count_vectorizer, num_words,
     plt.xticks(fontsize=14)
 
     # helper function
-    def plot_words(count_dict, output_path):
-        words = [w[0] for w in count_dict]
-        counts = [w[1] for w in count_dict]
+    def plot_words(word_count_pair_list, output_path):
+        words = [w[0] for w in word_count_pair_list]
+        counts = [w[1] for w in word_count_pair_list]
         x_pos = np.arange(len(words))
 
         plt.figure(2, figsize=(15, 15 / 1.6180))
@@ -115,8 +115,9 @@ def plot_most_frequent_words(count_data, count_vectorizer, num_words,
         plt.savefig(output_path)
 
     # Visualise the 10 most common words
-    count_dict = most_frequent_words(count_data, count_vectorizer, num_words)
-    plot_words(count_dict, frequent_words_plot_path)
+    word_count_pair_list = most_frequent_words(count_data, count_vectorizer,
+                                               num_words)
+    plot_words(word_count_pair_list, frequent_words_plot_path)
 
 
 ###################
