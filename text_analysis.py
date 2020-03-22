@@ -113,7 +113,7 @@ def plot_most_frequent_words(word_count_pair_list, frequent_words_plot_path):
 
     plt.figure(2, figsize=(15, 15 / 1.6180))
     plt.subplot(title='Most common words')
-    sns.barplot(x_pos, counts)
+    sns.barplot(x_pos, counts, palette='GnBu_r')
     plt.xticks(x_pos, words, rotation=90)
     plt.xlabel('words')
     plt.ylabel('counts')
