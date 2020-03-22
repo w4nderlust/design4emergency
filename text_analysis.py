@@ -123,19 +123,19 @@ def plot_most_frequent_words(count_data, count_vectorizer, num_words,
 ###################
 # learn topic model
 ###################
-def learn_topic_model(count_data, count_vectorizer, num_topics, num_words):
+def learn_topic_model(count_data, num_topics):
     # LDA is a specific kind of topic model
     from sklearn.decomposition import LatentDirichletAllocation as LDA
 
     # Create and fit the LDA model
     lda = LDA(n_components=num_topics, n_jobs=-1)
-    lda.fit(count_data)
-    return lda
+    predicted_topics = lda.fit_transform(count_data)
+    return lda, predicted_topics
 
 
-###################
+##############
 # print topics
-###################
+##############
 def print_topics(model, count_vectorizer, n_top_words):
     words = count_vectorizer.get_feature_names()
     for topic_idx, topic in enumerate(model.components_):
@@ -143,6 +143,15 @@ def print_topics(model, count_vectorizer, n_top_words):
         print(" ".join([words[i]
                         for i in topic.argsort()[:-n_top_words - 1:-1]]))
 
+#####################################
+# save predicted topics per datapoint
+#####################################
+def save_predicted_topics(predicted_topics, predicted_topics_path):
+    predicted_topics_df = pd.DataFrame(
+        data=predicted_topics,
+        columns=["topic_" + str(i + 1) for i in range(predicted_topics.shape[1])]
+    )
+    predicted_topics_df.to_csv(predicted_topics_path, index=False)
 
 #######################
 # visualize topic model
@@ -175,6 +184,7 @@ def text_analysis(
         num_words,
         wordcloud_path,
         frequent_words_plot_path,
+        predicted_topics_path,
         ldavis_path,
 ):
     print("Loading data...")
@@ -204,9 +214,12 @@ def text_analysis(
     print()
 
     print("Calculating topic model...")
-    lda = learn_topic_model(count_data, count_vectorizer, num_topics, num_words)
+    lda, predicted_topics = learn_topic_model(count_data, num_topics)
     print("Topics found via LDA:")
     print_topics(lda, count_vectorizer, num_words)
+    print("Saving predicted topics...")
+    save_predicted_topics(predicted_topics, predicted_topics_path)
+    print("Predicted topics saved to:", predicted_topics_path)
     print()
 
     print("Generating LDA visualization...")
@@ -265,6 +278,13 @@ if __name__ == '__main__':
         type=str,
         help='path to save the frequent word plot to',
         default='frequent_words.png'
+    )
+    parser.add_argument(
+        '-pt',
+        '--predicted_topics_path',
+        type=str,
+        help='path to save predicted LDA topics for each datapoint to',
+        default='predicted_topics.csv'
     )
     parser.add_argument(
         '-lv',
