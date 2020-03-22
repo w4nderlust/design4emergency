@@ -1,0 +1,8 @@
+pyldavis
+wordcloud
+pandas
+scikit-learn
+numpy
+matplotlib
+seaborn
+stopwordsiso
