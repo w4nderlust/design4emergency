@@ -1,7 +1,11 @@
 import argparse
 import os
 import pandas as pd
+import json
 
+STOPWORDS_FILE = 'all_stopwords.json'
+with open(STOPWORDS_FILE, encoding="utf8") as json_data:
+    stopwords = json.load(json_data)
 
 ###########
 # load data
@@ -37,7 +41,6 @@ def clean_data(data_df):
 def plot_word_cloud(data_df, wordcloud_path, language):
     # Import the wordcloud library
     from wordcloud import WordCloud
-    import stopwordsiso as stopwords
 
     # plot one wordcloud per column
     long_string = ','.join(list(data_df.values))
@@ -47,7 +50,7 @@ def plot_word_cloud(data_df, wordcloud_path, language):
         max_words=5000,
         contour_width=3,
         contour_color='steelblue',
-        stopwords=stopwords.stopwords(language)
+        stopwords=stopwords[language]
     )
     # Generate a word cloud
     wordcloud.generate(long_string)
@@ -60,9 +63,8 @@ def plot_word_cloud(data_df, wordcloud_path, language):
 ###############################
 def get_vectorizer_and_count_data(data_df, language):
     from sklearn.feature_extraction.text import CountVectorizer
-    import stopwordsiso as stopwords
     # Initialise the count vectorizer with the English stop words
-    count_vectorizer = CountVectorizer(stop_words=stopwords.stopwords(language))
+    count_vectorizer = CountVectorizer(stop_words=stopwords[language])
     # Fit and transform the processed titles
     count_data = count_vectorizer.fit_transform(data_df)
     return count_vectorizer, count_data
