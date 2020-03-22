@@ -14,6 +14,7 @@ with open(STOPWORDS_FILE, encoding="utf8") as json_data:
 # Read data into dataframe
 def load_data(data_path, column):
     data_df = pd.read_csv(data_path, sep='\t', encoding='utf8')
+    data_df = data_df.rename(columns={c: c.strip() for c in data_df.columns})
     data_df = data_df[column]
     return data_df
 
@@ -39,7 +40,7 @@ def clean_data(data_df):
 #################
 # plot word cloud
 #################
-def plot_word_cloud(data_df, wordcloud_path, language):
+def plot_word_cloud(data_df, wordcloud_filename, language):
     # Import the wordcloud library
     from wordcloud import WordCloud
 
@@ -56,7 +57,7 @@ def plot_word_cloud(data_df, wordcloud_path, language):
     # Generate a word cloud
     wordcloud.generate(long_string)
     # Visualize the word cloud
-    wordcloud.to_file(wordcloud_path)
+    wordcloud.to_file(wordcloud_filename)
 
 
 ###############################
@@ -87,18 +88,20 @@ def most_frequent_words(count_data, count_vectorizer, n_top_words):
     )[0:n_top_words]
     return word_count_pair_list
 
+
 ##########################
 # save most frequent words
 ##########################
-def save_frequent_words(word_count_pair_list, frequent_words_path):
+def save_frequent_words(word_count_pair_list, frequent_words_filename):
     word_count_dict = {w: int(c) for w, c in word_count_pair_list}
-    with open(frequent_words_path, "w", encoding="utf8") as f:
+    with open(frequent_words_filename, "w", encoding="utf8") as f:
         json.dump(word_count_dict, f)
+
 
 ##########################
 # plot most frequent words
 ##########################
-def plot_most_frequent_words(word_count_pair_list, frequent_words_plot_path):
+def plot_most_frequent_words(word_count_pair_list, frequent_words_plot_filename):
     import numpy as np
     import matplotlib.pyplot as plt
     import seaborn as sns
@@ -117,7 +120,7 @@ def plot_most_frequent_words(word_count_pair_list, frequent_words_plot_path):
     plt.xticks(x_pos, words, rotation=90)
     plt.xlabel('words')
     plt.ylabel('counts')
-    plt.savefig(frequent_words_plot_path)
+    plt.savefig(frequent_words_plot_filename)
 
 
 ###################
@@ -143,41 +146,43 @@ def print_topics(model, count_vectorizer, n_top_words):
         print(" ".join([words[i]
                         for i in topic.argsort()[:-n_top_words - 1:-1]]))
 
+
 #############
 # save topics
 #############
-def save_topics(model, count_vectorizer, topics_path):
+def save_topics(model, count_vectorizer, topics_filename):
     topics = {}
     words = count_vectorizer.get_feature_names()
     for topic_idx, topic in enumerate(model.components_):
         topics["topic_" + str(topic_idx + 1)] = {
             words[i]: s for i, s in enumerate(topic)
         }
-    with open(topics_path, "w", encoding="utf8") as f:
+    with open(topics_filename, "w", encoding="utf8") as f:
         json.dump(topics, f)
+
 
 #####################################
 # save predicted topics per datapoint
 #####################################
-def save_predicted_topics(predicted_topics, predicted_topics_path):
+def save_predicted_topics(predicted_topics, predicted_topics_filename):
     predicted_topics_df = pd.DataFrame(
         data=predicted_topics,
         columns=["topic_" + str(i + 1) for i in range(predicted_topics.shape[1])]
     )
-    predicted_topics_df.to_csv(predicted_topics_path, index=False)
+    predicted_topics_df.to_csv(predicted_topics_filename, index=False)
 
 
 #######################
 # visualize topic model
 #######################
 def visualize_topic_model(lda, count_data, count_vectorizer,
-                          num_topics, ldavis_path):
+                          num_topics, ldavis_filename_prefix):
     from pyLDAvis import sklearn as sklearn_lda
     import pickle
     import pyLDAvis
 
-    ldavis_data_path = os.path.join(ldavis_path + str(num_topics))
-    ldavis_html_path = ldavis_path + str(num_topics) + '.html'
+    ldavis_data_path = os.path.join(ldavis_filename_prefix + str(num_topics))
+    ldavis_html_path = ldavis_filename_prefix + str(num_topics) + '.html'
     # this is a bit time consuming - make the if statement True
     # if you want to execute visualization prep yourself
     ldavis_prepared = sklearn_lda.prepare(lda, count_data, count_vectorizer)
@@ -196,12 +201,12 @@ def text_analysis(
         language,
         num_topics,
         num_words,
-        wordcloud_path,
-        frequent_words_path,
-        frequent_words_plot_path,
-        topics_path,
-        predicted_topics_path,
-        ldavis_path,
+        wordcloud_filename,
+        frequent_words_filename,
+        frequent_words_plot_filename,
+        topics_filename,
+        predicted_topics_filename,
+        ldavis_filename_prefix,
 ):
     print("Loading data...")
     data_df = load_data(data_path, column)
@@ -216,8 +221,8 @@ def text_analysis(
     print()
 
     print("Generating word cloud...")
-    plot_word_cloud(data_df, wordcloud_path, language)
-    print("Wordcloud saved to:", wordcloud_path)
+    plot_word_cloud(data_df, wordcloud_filename, language)
+    print("Wordcloud saved to:", wordcloud_filename)
     print()
 
     count_vectorizer, count_data = get_vectorizer_and_count_data(data_df,
@@ -228,14 +233,14 @@ def text_analysis(
     print("Saving frequent words...")
     save_frequent_words(
         most_frequent_words(count_data, count_vectorizer, count_data.shape[0]),
-        frequent_words_path
+        frequent_words_filename
     )
-    print("Frequent words saved to:", frequent_words_path)
+    print("Frequent words saved to:", frequent_words_filename)
     print()
 
     print("Generating frequent word plot...")
-    plot_most_frequent_words(word_count_pair_list, frequent_words_plot_path)
-    print("Frequent word plot saved to:", frequent_words_plot_path)
+    plot_most_frequent_words(word_count_pair_list, frequent_words_plot_filename)
+    print("Frequent word plot saved to:", frequent_words_plot_filename)
     print()
 
     print("Calculating topic model...")
@@ -243,17 +248,36 @@ def text_analysis(
     print("Topics found via LDA:")
     print_topics(lda, count_vectorizer, num_words)
     print("Saving topics...")
-    save_topics(lda, count_vectorizer, topics_path)
-    print("Topics saved to:", topics_path)
+    save_topics(lda, count_vectorizer, topics_filename)
+    print("Topics saved to:", topics_filename)
     print("Saving predicted topics...")
-    save_predicted_topics(predicted_topics, predicted_topics_path)
-    print("Predicted topics saved to:", predicted_topics_path)
+    save_predicted_topics(predicted_topics, predicted_topics_filename)
+    print("Predicted topics saved to:", predicted_topics_filename)
     print()
 
     print("Generating LDA visualization...")
     visualize_topic_model(lda, count_data, count_vectorizer,
-                          num_topics, ldavis_path)
-    print("LDA visualization saved to:", ldavis_path)
+                          num_topics, ldavis_filename_prefix)
+    print("LDA visualization saved to:", ldavis_filename_prefix)
+
+
+def format_filename(s):
+    import string
+    """Take a string and return a valid filename constructed from the string.
+    Uses a whitelist approach: any characters not present in valid_chars are
+    removed. Also spaces are replaced with underscores.
+    
+    Note: this method may produce invalid filenames such as ``, `.` or `..`
+    When I use this method I prepend a date string like '2009_01_15_19_46_32_'
+    and append a file extension like '.txt', so I avoid the potential of using
+    an invalid filename.
+    
+    """
+    valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+    filename = ''.join(c for c in s if c in valid_chars)
+    filename = filename.replace(' ', '_')
+    filename = filename.lower()
+    return filename
 
 
 if __name__ == '__main__':
@@ -268,9 +292,10 @@ if __name__ == '__main__':
         help='path to the data TSV'
     )
     parser.add_argument(
-        'column',
+        'columns',
         type=str,
-        help='column to extract from TSV'
+        nargs='+',
+        help='columns to extract from TSV'
     )
     parser.add_argument(
         '-l',
@@ -295,45 +320,89 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '-wc',
-        '--wordcloud_path',
+        '--wordcloud_filename',
         type=str,
         help='path to save the wordcloud to',
         default='wordcloud.png'
     )
     parser.add_argument(
         '-fw',
-        '--frequent_words_path',
+        '--frequent_words_filename',
         type=str,
         help='path to save frequent words to',
         default='frequent_words.json'
     )
     parser.add_argument(
         '-fwp',
-        '--frequent_words_plot_path',
+        '--frequent_words_plot_filename',
         type=str,
         help='path to save the frequent word plot to',
         default='frequent_words.png'
     )
     parser.add_argument(
         '-tp',
-        '--topics_path',
+        '--topics_filename',
         type=str,
         help='path to save frequent words to',
         default='topics.json'
     )
     parser.add_argument(
         '-pt',
-        '--predicted_topics_path',
+        '--predicted_topics_filename',
         type=str,
         help='path to save predicted LDA topics for each datapoint to',
         default='predicted_topics.csv'
     )
     parser.add_argument(
         '-lv',
-        '--ldavis_path',
+        '--ldavis_filename_prefix',
         type=str,
         help='path (prefix) to save LDA vis plot files to',
         default='ldavis_'
     )
+    parser.add_argument(
+        '-o',
+        '--output_path',
+        type=str,
+        help='path that will contain all directories, one for each column',
+        default='.'
+    )
     args = parser.parse_args()
-    text_analysis(**vars(args))
+
+    for column in args.columns:
+        column_dir = format_filename(column)
+        if not os.path.exists(column_dir):
+            os.makedirs(column_dir)
+            
+        wordcloud_filename = os.path.join(
+            args.output_path, column_dir, args.wordcloud_filename
+        )
+        frequent_words_filename = os.path.join(
+            args.output_path, column_dir, args.frequent_words_filename
+        )
+        frequent_words_plot_filename = os.path.join(
+            args.output_path, column_dir, args.frequent_words_plot_filename
+        )
+        topics_filename = os.path.join(
+            args.output_path, column_dir, args.topics_filename
+        )
+        predicted_topics_filename = os.path.join(
+            args.output_path, column_dir, args.predicted_topics_filename
+        )
+        ldavis_filename_prefix = os.path.join(
+            args.output_path, column_dir, args.ldavis_filename_prefix
+        )
+
+        text_analysis(
+            data_path=args.data_path,
+            column=column,
+            language=args.language,
+            num_topics=args.num_topics,
+            num_words=args.num_words,
+            wordcloud_filename=wordcloud_filename,
+            frequent_words_filename=frequent_words_filename,
+            frequent_words_plot_filename=frequent_words_plot_filename,
+            topics_filename=topics_filename,
+            predicted_topics_filename=predicted_topics_filename,
+            ldavis_filename_prefix=ldavis_filename_prefix
+        )
