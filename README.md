@@ -58,8 +58,9 @@ python text_analysis.py "/home/piero/data/DfE_Dataset_Corriere_1600_Danilo - For
 For more parameters check:
 ```
 usage: text_analysis.py [-h] [-l LANGUAGE] [-lm] [-nr NGRAM_RANGE]
-                        [-w NUM_WORDS] [-t NUM_TOPICS]
-                        [-wc WORDCLOUD_FILENAME] [-fw FREQUENT_WORDS_FILENAME]
+                        [-w NUM_WORDS] [-t NUM_TOPICS] [-m MANUAL_MAPPINGS]
+                        [-wc WORD_CLOUD_FILENAME]
+                        [-fw FREQUENT_WORDS_FILENAME]
                         [-fwp FREQUENT_WORDS_PLOT_FILENAME]
                         [-ttw TOP_TFIDF_WORDS_FILENAME]
                         [-ttwp TOP_TFIDF_WORDS_PLOT_FILENAME]
@@ -87,8 +88,10 @@ optional arguments:
                         number of most frequent words to show
   -t NUM_TOPICS, --num_topics NUM_TOPICS
                         number of topics for topic modeling
-  -wc WORDCLOUD_FILENAME, --wordcloud_filename WORDCLOUD_FILENAME
-                        path to save the wordcloud to
+  -m MANUAL_MAPPINGS, --manual_mappings MANUAL_MAPPINGS
+                        path to JSON file contaning manual mappings
+  -wc WORD_CLOUD_FILENAME, --word_cloud_filename WORD_CLOUD_FILENAME
+                        path to save the word cloud to
   -fw FREQUENT_WORDS_FILENAME, --frequent_words_filename FREQUENT_WORDS_FILENAME
                         path to save frequent words to
   -fwp FREQUENT_WORDS_PLOT_FILENAME, --frequent_words_plot_filename FREQUENT_WORDS_PLOT_FILENAME
