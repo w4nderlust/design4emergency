@@ -2,6 +2,7 @@ import argparse
 import os
 import pandas as pd
 import json
+from tqdm import tqdm
 
 STOPWORDS_FILE = 'all_stopwords.json'
 with open(STOPWORDS_FILE, encoding="utf8") as json_data:
@@ -38,6 +39,7 @@ def clean_data(data_df):
 
     return data_df
 
+
 ###########
 # lemmatize
 ###########
@@ -45,7 +47,7 @@ def lemmatize(data_df, language):
     import spacy
 
     language_map = {
-        'it' : 'it_core_news_sm',
+        'it': 'it_core_news_sm',
         'en': 'it_core_web_sm'
     }
 
@@ -56,6 +58,7 @@ def lemmatize(data_df, language):
 
     data_df = data_df.map(text2lemmas)
     return data_df
+
 
 #################
 # plot word cloud
@@ -236,7 +239,7 @@ def predict_sentiment_with_paralleldots(data_df):
     import paralleldots
     # Setting your API key
     paralleldots.set_api_key(PARALLEL_DOTS_KEY)
-    texts_list = data_df.tolist()[:3]
+    texts_list = data_df.tolist()
     result = paralleldots.sentiment(texts_list)
     return result['sentiment']
 
@@ -249,21 +252,28 @@ def predict_sentiment_with_alberto(data_df):
     positive_url = "http://193.204.187.35:50000/api/alberto_pos_tw"
     negative_url = "http://193.204.187.35:50000/api/alberto_neg_tw"
 
-    predicted_sentiment = {'positive': [], 'negative': []}
-    data = {'messages': data_df.tolist()}
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
-    positive_response = requests.post(positive_url, data=json.dumps(data),
-                                      headers=headers)
-    positive_response = positive_response.json()
-    for elem in positive_response['results']:
-        predicted_sentiment['positive'].append(elem['class'])
+    predicted_sentiment = {'positive': [], 'negative': []}
 
-    negative_response = requests.post(negative_url, data=json.dumps(data),
-                                      headers=headers)
-    negative_response = negative_response.json()
-    for elem in negative_response['results']:
-        predicted_sentiment['negative'].append(elem['class'])
+    texts = data_df.tolist()
+
+    batch_size = 9
+    for i in tqdm(range(0, len(texts), batch_size)):
+        text_batch = texts[i:i + batch_size]
+        data = {'messages': text_batch}
+
+        positive_response = requests.post(positive_url, data=json.dumps(data),
+                                          headers=headers)
+        positive_response = positive_response.json()
+        for elem in positive_response['results']:
+            predicted_sentiment['positive'].append(elem['class'])
+
+        negative_response = requests.post(negative_url, data=json.dumps(data),
+                                          headers=headers)
+        negative_response = negative_response.json()
+        for elem in negative_response['results']:
+            predicted_sentiment['negative'].append(elem['class'])
 
     return predicted_sentiment
 
@@ -364,6 +374,8 @@ def text_analysis(
     print("Saving topics...")
     save_topics(lda, tfidf_vectorizer, topics_filename)
     print("Topics saved to:", topics_filename)
+    print()
+
     print("Saving predicted topics...")
     save_predicted_topics(predicted_topics, predicted_topics_filename)
     print("Predicted topics saved to:", predicted_topics_filename)
@@ -377,7 +389,7 @@ def text_analysis(
 
     if predict_sentiment:
         if language == 'it':
-            print("Predict sentiment...")
+            print("Predict sentiment... (takes about 100s per batch)")
             predicted_sentiment = predict_sentiment_with_alberto(data_df)
             save_sentiment(predicted_sentiment, predicted_sentiment_filename)
             print("Predict sentiment saved to:", predicted_sentiment_filename)
