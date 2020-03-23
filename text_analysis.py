@@ -33,7 +33,7 @@ def clean_data(data_df):
     # fill empty rows with empty string
     data_df.fillna('', inplace=True)
     # Remove punctuation
-    data_df = data_df.map(lambda x: re.sub('[,\.!?]', '', x))
+    data_df = data_df.map(lambda x: re.sub('[,.!?]', '', x))
     data_df = data_df.map(lambda x: re.sub('\s+', ' ', x))
     # Convert the titles to lowercase
     data_df = data_df.map(lambda x: x.strip().lower())
@@ -44,7 +44,7 @@ def clean_data(data_df):
 ###########
 # lemmatize
 ###########
-def lemmatize(data_df, language):
+def lemmatize_text(data_df, language):
     import spacy
 
     language_map = {
@@ -64,14 +64,14 @@ def lemmatize(data_df, language):
 #################
 # plot word cloud
 #################
-def plot_word_cloud(data_df, wordcloud_filename, language):
-    # Import the wordcloud library
+def plot_word_cloud(data_df, word_cloud_filename, language):
+    # Import the word cloud library
     from wordcloud import WordCloud
 
-    # plot one wordcloud per column
+    # plot one word cloud per column
     long_string = ','.join(list(data_df.values))
-    # Create a WordCloud object
-    wordcloud = WordCloud(
+    # Create a Word Cloud object
+    word_cloud = WordCloud(
         background_color="white",
         max_words=5000,
         contour_width=3,
@@ -79,9 +79,9 @@ def plot_word_cloud(data_df, wordcloud_filename, language):
         stopwords=stopwords[language]
     )
     # Generate a word cloud
-    wordcloud.generate(long_string)
+    word_cloud.generate(long_string)
     # Visualize the word cloud
-    wordcloud.to_file(wordcloud_filename)
+    word_cloud.to_file(word_cloud_filename)
 
 
 #####################################
@@ -313,7 +313,7 @@ def text_analysis(
         ngram_range,
         num_topics,
         num_words,
-        wordcloud_filename,
+        word_cloud_filename,
         frequent_words_filename,
         frequent_words_plot_filename,
         top_tfidf_words_filename,
@@ -338,14 +338,14 @@ def text_analysis(
 
     if lemmatize:
         print("Lemmatizing data...")
-        data_df = lemmatize(data_df, language)
+        data_df = lemmatize_text(data_df, language)
         print("Lemmatized data sample")
         print(data_df.head())
         print()
 
     print("Generating word cloud...")
-    plot_word_cloud(data_df, wordcloud_filename, language)
-    print("Wordcloud saved to:", wordcloud_filename)
+    plot_word_cloud(data_df, word_cloud_filename, language)
+    print("word_cloud saved to:", word_cloud_filename)
     print()
 
     count_vectorizer, count_data = get_count_vectorizer_and_transformed_data(
@@ -492,10 +492,10 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '-wc',
-        '--wordcloud_filename',
+        '--word_cloud_filename',
         type=str,
-        help='path to save the wordcloud to',
-        default='wordcloud.png'
+        help='path to save the word cloud to',
+        default='word_cloud.png'
     )
     parser.add_argument(
         '-fw',
@@ -581,8 +581,8 @@ if __name__ == '__main__':
         if not os.path.exists(column_dir):
             os.makedirs(column_dir)
 
-        wordcloud_filename = os.path.join(
-            args.output_path, column_dir, args.wordcloud_filename
+        word_cloud_filename = os.path.join(
+            args.output_path, column_dir, args.word_cloud_filename
         )
         frequent_words_filename = os.path.join(
             args.output_path, column_dir, args.frequent_words_filename
@@ -617,7 +617,7 @@ if __name__ == '__main__':
             ngram_range=ngram_range,
             num_topics=args.num_topics,
             num_words=args.num_words,
-            wordcloud_filename=wordcloud_filename,
+            word_cloud_filename=word_cloud_filename,
             frequent_words_filename=frequent_words_filename,
             frequent_words_plot_filename=frequent_words_plot_filename,
             top_tfidf_words_filename=top_tfidf_words_filename,
