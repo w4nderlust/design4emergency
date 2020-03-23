@@ -1,5 +1,6 @@
 import argparse
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import pandas as pd
 import json
 from tqdm import tqdm
@@ -258,7 +259,7 @@ def predict_sentiment_with_alberto(data_df):
 
     texts = data_df.tolist()
 
-    batch_size = 9
+    batch_size = 8
     for i in tqdm(range(0, len(texts), batch_size)):
         text_batch = texts[i:i + batch_size]
         data = {'messages': text_batch}
@@ -277,6 +278,22 @@ def predict_sentiment_with_alberto(data_df):
 
     return predicted_sentiment
 
+
+###############################################
+# predict sentiment with sentita (italian)
+###############################################
+def predict_sentiment_with_sentita(data_df):
+    from sentita import calculate_polarity
+    predicted_sentiment = {'positive': [], 'negative': []}
+    texts = data_df.tolist()
+    batch_size = 64
+    for i in tqdm(range(0, len(texts), batch_size)):
+        text_batch = texts[i:i + batch_size]
+        polarities = calculate_polarity(text_batch)
+        for elem in polarities:
+            predicted_sentiment['positive'].append(elem[0])
+            predicted_sentiment['negative'].append(elem[1])
+    return predicted_sentiment
 
 ################
 # save sentiment
@@ -389,8 +406,8 @@ def text_analysis(
 
     if predict_sentiment:
         if language == 'it':
-            print("Predict sentiment... (takes about 100s per batch)")
-            predicted_sentiment = predict_sentiment_with_alberto(data_df)
+            print("Predict sentiment...")
+            predicted_sentiment = predict_sentiment_with_sentita(data_df)
             save_sentiment(predicted_sentiment, predicted_sentiment_filename)
             print("Predict sentiment saved to:", predicted_sentiment_filename)
             print()
