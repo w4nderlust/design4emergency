@@ -72,10 +72,12 @@ def plot_word_cloud(data_df, word_cloud_filename, language):
     long_string = ','.join(list(data_df.values))
     # Create a Word Cloud object
     word_cloud = WordCloud(
-        background_color="white",
-        max_words=5000,
-        contour_width=3,
-        contour_color='steelblue',
+        background_color="black",
+        width=1000,
+        height=1000,
+        prefer_horizontal=1,
+        max_words=200,
+        colormap="summer",
         stopwords=stopwords[language]
     )
     # Generate a word cloud
