@@ -1,5 +1,6 @@
 import argparse
 import os
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import pandas as pd
 import json
@@ -60,6 +61,22 @@ def lemmatize_text(data_df, language):
     data_df = data_df.map(text2lemmas)
     return data_df
 
+
+#######################
+# Apply manual mappings
+#######################
+def apply_manual_mappings(data_df, manual_mappings):
+    with open(manual_mappings, encoding="utf8") as json_data:
+        manual_mappings_dict = json.load(json_data)
+
+    def map_text(text):
+        return ' '.join(
+            manual_mappings_dict[t] if t in manual_mappings_dict else t
+            for t in text.split()
+        )
+
+    data_df = data_df.map(map_text)
+    return data_df
 
 #################
 # plot word cloud
@@ -297,6 +314,7 @@ def predict_sentiment_with_sentita(data_df):
             predicted_sentiment['negative'].append(elem[1])
     return predicted_sentiment
 
+
 ################
 # save sentiment
 ################
@@ -315,6 +333,7 @@ def text_analysis(
         ngram_range,
         num_topics,
         num_words,
+        manual_mappings,
         word_cloud_filename,
         frequent_words_filename,
         frequent_words_plot_filename,
@@ -342,6 +361,13 @@ def text_analysis(
         print("Lemmatizing data...")
         data_df = lemmatize_text(data_df, language)
         print("Lemmatized data sample")
+        print(data_df.head())
+        print()
+
+    if manual_mappings:
+        print("Applying manual mappings...")
+        data_df = apply_manual_mappings(data_df, manual_mappings)
+        print("Manually mapped data sample")
         print(data_df.head())
         print()
 
@@ -493,6 +519,13 @@ if __name__ == '__main__':
         default=5
     )
     parser.add_argument(
+        '-m',
+        '--manual_mappings',
+        type=str,
+        help='path to JSON file contaning manual mappings',
+        default=None
+    )
+    parser.add_argument(
         '-wc',
         '--word_cloud_filename',
         type=str,
@@ -619,6 +652,7 @@ if __name__ == '__main__':
             ngram_range=ngram_range,
             num_topics=args.num_topics,
             num_words=args.num_words,
+            manual_mappings=args.manual_mappings,
             word_cloud_filename=word_cloud_filename,
             frequent_words_filename=frequent_words_filename,
             frequent_words_plot_filename=frequent_words_plot_filename,
