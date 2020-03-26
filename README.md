@@ -1,61 +1,76 @@
 # design4emergency
 
-
 ## Setup
 
 Clone repo:
+
 ```
 git clone git@github.com:tezzutezzu/design4emergency.git
 ```
 
 Enter repo directory:
+
 ```
 cd design4emergency
 ```
 
 Create virtualenv:
+
 ```
-viertualenv -p python3 venv
+virtualenv -p python3 venv
 ```
 
 Enter in the virtualenv:
+
 ```
 source venv/bin/activate
 ```
 
 Install dependencies:
+
 ```
 pip install -r requirements.txt
 ```
 
 Download spaCy languages (needed for lemmatization):
+
 ```
+pip install spacy
 python -m spacy download it_core_news_sm
 python -m spacy download en_core_web_sm
 ```
 
 Install SentITA:
+
 ```
 git clone git@github.com:w4nderlust/SentITA.git
-gdown https://drive.google.com/uc?id=1IN-RZL-gpgzuosr-BknKtA6reDJ48XNI
-mv test_sentita_lstm-cnn_wikiner_v1.h5 SentITA/sentita
-pip install ./SentITA
-rm -rf SentITA
 ```
+
+Download https://drive.google.com/uc?id=1IN-RZL-gpgzuosr-BknKtA6reDJ48XNI
+Move test_sentita_lstm-cnn_wikiner_v1.h5 inside SentITA/sentita folder
+
+```
+pip install ./SentITA
+```
+
+Remove folder SentITA
 
 ## Usage
 
 Command:
+
 ```
 python text_analysis.py filename/to/dataset column_name column_name ...
 ```
 
 Example:
+
 ```
 python text_analysis.py "/home/piero/data/DfE_Dataset_Corriere_1600_Danilo - Form Responses 1.tsv" "Cosa ti fa più paura?" "Cosa ti fa stare bene?"
 ```
 
 For more parameters check:
+
 ```
 usage: text_analysis.py [-h] [-g GROUPS [GROUPS ...]] [-l LANGUAGE] [-lm]
                         [-nr NGRAM_RANGE] [-w NUM_WORDS] [-t NUM_TOPICS]
