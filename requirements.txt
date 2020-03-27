@@ -9,3 +9,4 @@ tqdm
 tensorflow==1.15.2
 spacy
 gdown
+unidecode
