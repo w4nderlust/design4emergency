@@ -43,7 +43,7 @@ python -m spacy download en_core_web_sm
 Install SentITA:
 
 ```
-git clone git@github.com:w4nderlust/SentITA.git
+git clone https://github.com/w4nderlust/SentITA.git
 ```
 
 Download https://drive.google.com/uc?id=1IN-RZL-gpgzuosr-BknKtA6reDJ48XNI
@@ -55,18 +55,20 @@ pip install ./SentITA
 
 Remove folder SentITA
 
+Download `data.tsv` and place it into the `data` folder
+
 ## Usage
 
 Command:
 
 ```
-python text_analysis.py filename/to/dataset column_name column_name ...
+python text_analysis.py data/data.tsv column_name column_name ...
 ```
 
 Example:
 
 ```
-python text_analysis.py "/home/piero/data/DfE_Dataset_Corriere_1600_Danilo - Form Responses 1.tsv" "Cosa ti fa più paura?" "Cosa ti fa stare bene?"
+python text_analysis.py data/data.tsv "Cosa ti fa più paura?" "Cosa ti fa stare bene?"
 ```
 
 For more parameters check:
