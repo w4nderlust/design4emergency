@@ -1,7 +1,7 @@
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import argparse
-import unidecode
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import pandas as pd
 import json
 from tqdm import tqdm
@@ -17,10 +17,10 @@ PARALLEL_DOTS_KEY = ''
 # load data
 ###########
 # Read data into dataframe
-def load_data(data_path, column, groups):
+def load_data(data_path, column):
     data_df = pd.read_csv(data_path, sep='\t', encoding='utf8')
     data_df = data_df.rename(columns={c: c.strip() for c in data_df.columns})
-    data_df = data_df[[column] + (groups if groups else [])]
+    data_df = data_df[column]
     return data_df
 
 
@@ -172,11 +172,13 @@ def plot_top_words(word_count_pair_list, frequent_words_plot_filename):
     x_pos = np.arange(len(words))
 
     plt.figure(2, figsize=(15, 16))
+    plt.margins(x=200)
     plt.subplot(title='Most common words')
-    sns.barplot(x_pos, counts, palette='GnBu_r')
-    plt.xticks(x_pos, words, rotation=90)
-    plt.xlabel('words')
-    plt.ylabel('counts')
+    plt.subplots_adjust(left=0.2)
+    sns.barplot(counts, x_pos, palette='GnBu_r', orient="h")
+    plt.yticks( x_pos,words)
+    plt.ylabel('words')
+    plt.xlabel('counts')
     plt.savefig(frequent_words_plot_filename)
 
 
@@ -324,10 +326,10 @@ def save_sentiment(predicted_sentiment, predicted_sentiment_filename):
     )
     predicted_sentiment_df.to_csv(predicted_sentiment_filename, index=False)
 
+
 def text_analysis(
         data_path,
         column,
-        groups,
         language,
         lemmatize,
         ngram_range,
@@ -346,55 +348,49 @@ def text_analysis(
         predicted_sentiment_filename,
 ):
     print("Loading data...")
-    data_df = load_data(data_path, column, groups)
+    data_df = load_data(data_path, column)
     print("Loaded data sample")
     print(data_df.head())
     print()
 
     print("Cleaning data...")
-    data_df[column] = clean_data(data_df[column])
+    data_df = clean_data(data_df)
     print("Clean data sample")
     print(data_df.head())
     print()
 
     if lemmatize:
         print("Lemmatizing data...")
-        data_df[column] = lemmatize_text(data_df[column], language)
+        data_df = lemmatize_text(data_df, language)
         print("Lemmatized data sample")
         print(data_df.head())
         print()
 
     if manual_mappings:
         print("Applying manual mappings...")
-        data_df[column] = apply_manual_mappings(data_df[column], manual_mappings)
+        data_df = apply_manual_mappings(data_df, manual_mappings)
         print("Manually mapped data sample")
         print(data_df.head())
         print()
 
     print("Generating word cloud...")
-    plot_word_cloud(data_df[column], word_cloud_filename, language)
+    plot_word_cloud(data_df, word_cloud_filename, language)
     print("word_cloud saved to:", word_cloud_filename)
     print()
 
     count_vectorizer, count_data = get_count_vectorizer_and_transformed_data(
-        data_df[column], language, ngram_range
+        data_df, language, ngram_range
     )
-    all_word_count_pair_list = most_frequent_words(
-        count_data, count_vectorizer, count_data.shape[0] + 1
+    word_count_pair_list = most_frequent_words(
+        count_data, count_vectorizer, num_words
     )
-    word_count_pair_list = all_word_count_pair_list[:num_words]
-
     tfidf_vectorizer, tfidf_data = get_tfidf_vectorizer_and_transformed_data(
-        data_df[column], language, ngram_range
+        data_df, language, ngram_range
     )
-    all_tfidf_pair_list = most_frequent_words(
-        tfidf_data, tfidf_vectorizer, tfidf_data.shape[0] + 1
-    )
-    tfidf_pair_list = all_tfidf_pair_list[:num_words]
 
     print("Saving frequent words...")
     save_words(
-        all_word_count_pair_list,
+        most_frequent_words(count_data, count_vectorizer, count_data.shape[0]),
         frequent_words_filename
     )
     print("Frequent words saved to:", frequent_words_filename)
@@ -407,115 +403,16 @@ def text_analysis(
 
     print("Saving top tfidf words...")
     save_words(
-        all_tfidf_pair_list,
+        most_frequent_words(tfidf_data, tfidf_vectorizer, tfidf_data.shape[0]),
         top_tfidf_words_filename
     )
     print("Top tfidf words saved to:", top_tfidf_words_filename)
     print()
 
-    print("Generating top tfidf word plot...")
-    plot_top_words(tfidf_pair_list, top_tfidf_words_plot_filename)
-    print("Top tfidf word plot saved to:", top_tfidf_words_plot_filename)
+    print("Generating frequent word plot...")
+    plot_top_words(word_count_pair_list, top_tfidf_words_plot_filename)
+    print("Frequent word plot saved to:", top_tfidf_words_plot_filename)
     print()
-
-    #groups_sets = []
-    #groups_sets += groups
-    #for i in range(1, len(groups) + 1):
-    #    for j in range(len(groups) - i):
-    #        groups_comb_list.append([groups[k] for k in range(j, j + i + 1)])
-    if groups:
-        for group in groups:
-            grouped_words_counts = {}
-            grouped_words_tfidf = {}
-
-            group_unique_vals = data_df[group].unique()
-            for val in group_unique_vals:
-                split = data_df[data_df[group] == val]
-                split_texts = split[column]
-
-                word_cloud_filename_val = add_prefix_to_filename(
-                    word_cloud_filename, [group, val]
-                )
-                frequent_words_filename_val = add_prefix_to_filename(
-                    frequent_words_filename, [group, val]
-                )
-                frequent_words_plot_filename_val = add_prefix_to_filename(
-                    frequent_words_plot_filename, [group, val]
-                )
-                top_tfidf_words_filename_val = add_prefix_to_filename(
-                    top_tfidf_words_filename, [group, val]
-                )
-                top_tfidf_words_plot_filename_val = add_prefix_to_filename(
-                    top_tfidf_words_plot_filename, [group, val]
-                )
-
-                print("Generating word cloud...")
-                plot_word_cloud(split_texts, word_cloud_filename_val, language)
-                print("word_cloud saved to:", word_cloud_filename_val)
-                print()
-
-                count_vectorizer, count_data = get_count_vectorizer_and_transformed_data(
-                    split_texts, language, ngram_range
-                )
-                all_word_count_pair_list = most_frequent_words(
-                    count_data, count_vectorizer, count_data.shape[0] + 1
-                )
-                word_count_pair_list = all_word_count_pair_list[:num_words]
-
-                tfidf_vectorizer, tfidf_data = get_tfidf_vectorizer_and_transformed_data(
-                    split_texts, language, ngram_range
-                )
-                all_tfidf_pair_list = most_frequent_words(
-                    tfidf_data, tfidf_vectorizer, tfidf_data.shape[0] + 1
-                )
-                tfidf_pair_list = all_tfidf_pair_list[:num_words]
-
-                print("Saving frequent words...")
-                save_words(
-                    all_word_count_pair_list,
-                    frequent_words_filename_val
-                )
-                print("Frequent words saved to:", frequent_words_filename_val)
-                print()
-
-                print("Generating frequent word plot...")
-                plot_top_words(word_count_pair_list, frequent_words_plot_filename_val)
-                print("Frequent word plot saved to:", frequent_words_plot_filename_val)
-                print()
-
-                print("Saving top tfidf words...")
-                save_words(
-                    all_tfidf_pair_list,
-                    top_tfidf_words_filename_val
-                )
-                print("Top tfidf words saved to:", top_tfidf_words_filename_val)
-                print()
-
-                print("Generating top tfidf word plot...")
-                plot_top_words(tfidf_pair_list, top_tfidf_words_plot_filename_val)
-                print("Top tfidf word plot saved to:", top_tfidf_words_plot_filename_val)
-                print()
-
-                grouped_words_counts[val] = {w: int(c) for w, c in all_word_count_pair_list}
-                grouped_words_tfidf[val] = {w: int(c) for w, c in all_tfidf_pair_list}
-
-            print("Saving grouped frequent words...")
-            group_frequent_words_filename = add_prefix_to_filename(
-                frequent_words_filename, group
-            )
-            with open(group_frequent_words_filename, 'w', encoding="utf8") as f:
-                json.dump(grouped_words_counts, f, ensure_ascii=False)
-            print("Frequent words saved to:", group_frequent_words_filename)
-            print()
-
-            print("Saving grouped top tfidf words...")
-            group_top_tfidf_words_filename = add_prefix_to_filename(
-                top_tfidf_words_filename, group
-            )
-            with open(group_top_tfidf_words_filename, 'w', encoding="utf8") as f:
-                json.dump(grouped_words_tfidf, f, ensure_ascii=False)
-            print("Top tfidf words saved to:", group_top_tfidf_words_filename)
-            print()
 
     print("Calculating topic model...")
     lda, predicted_topics = learn_topic_model(tfidf_data, num_topics)
@@ -540,7 +437,7 @@ def text_analysis(
     if predict_sentiment:
         if language == 'it':
             print("Predict sentiment...")
-            predicted_sentiment = predict_sentiment_with_sentita(data_df[column])
+            predicted_sentiment = predict_sentiment_with_sentita(data_df)
             save_sentiment(predicted_sentiment, predicted_sentiment_filename)
             print("Predict sentiment saved to:", predicted_sentiment_filename)
             print()
@@ -568,18 +465,11 @@ def format_filename(s):
     
     """
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
-    filename = unidecode.unidecode(s)
-    filename = ''.join(c for c in filename if c in valid_chars)
+    filename = ''.join(c for c in s if c in valid_chars)
     filename = filename.replace(' ', '_')
     filename = filename.lower()
     return filename
 
-def add_prefix_to_filename(fn_path, prefix):
-    split_path = list(os.path.split(fn_path))
-    if isinstance(prefix, list or tuple):
-        prefix = "_".join(prefix)
-    split_path[-1] = format_filename(prefix) + "_" + split_path[-1]
-    return os.path.join(*split_path)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -595,13 +485,6 @@ if __name__ == '__main__':
         type=str,
         nargs='+',
         help='columns to extract from TSV'
-    )
-    parser.add_argument(
-        '-g',
-        '--groups',
-        type=str,
-        nargs='+',
-        help='columns from the TSV to use for grouping'
     )
     parser.add_argument(
         '-l',
@@ -766,7 +649,6 @@ if __name__ == '__main__':
         text_analysis(
             data_path=args.data_path,
             column=column,
-            groups=args.groups,
             language=args.language,
             lemmatize=args.lemmatize,
             ngram_range=ngram_range,
