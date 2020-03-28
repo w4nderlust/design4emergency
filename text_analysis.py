@@ -175,11 +175,13 @@ def plot_top_words(word_count_pair_list, frequent_words_plot_filename):
     x_pos = np.arange(len(words))
 
     plt.figure(2, figsize=(15, 16))
+    plt.margins(x=200)
     plt.subplot(title='Most common words')
-    sns.barplot(x_pos, counts, palette='GnBu_r')
-    plt.xticks(x_pos, words, rotation=90)
-    plt.xlabel('words')
-    plt.ylabel('counts')
+    plt.subplots_adjust(left=0.2)
+    sns.barplot(counts, x_pos, palette='GnBu_r', orient="h")
+    plt.yticks(x_pos, words)
+    plt.ylabel('words')
+    plt.xlabel('counts')
     plt.savefig(frequent_words_plot_filename)
 
 
@@ -370,7 +372,7 @@ def text_analysis(
 
     if manual_mappings:
         print("Applying manual mappings...")
-        data_df[column] = apply_manual_mappings(data_df[column], manual_mappings)
+        data_df = apply_manual_mappings(data_df, manual_mappings)
         print("Manually mapped data sample")
         print(data_df.head())
         print()
