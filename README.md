@@ -35,7 +35,6 @@ pip install -r requirements.txt
 Download spaCy languages (needed for lemmatization):
 
 ```
-pip install spacy
 python -m spacy download it_core_news_sm
 python -m spacy download en_core_web_sm
 ```
@@ -47,13 +46,29 @@ git clone https://github.com/w4nderlust/SentITA.git
 ```
 
 Download https://drive.google.com/uc?id=1IN-RZL-gpgzuosr-BknKtA6reDJ48XNI
+
+```
+gdown https://drive.google.com/uc?id=1IN-RZL-gpgzuosr-BknKtA6reDJ48XNI
+ mv test_sentita_lstm-cnn_wikiner_v1.h5 SentITA/sentita
+```
+
 Move test_sentita_lstm-cnn_wikiner_v1.h5 inside SentITA/sentita folder
+
+```
+mv test_sentita_lstm-cnn_wikiner_v1.h5 SentITA/sentita
+```
+
+Install SentITA
 
 ```
 pip install ./SentITA
 ```
 
 Remove folder SentITA
+
+```
+rm -r SentITA
+```
 
 Download `data.tsv` and place it into the `data` folder
 
