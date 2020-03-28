@@ -1,10 +1,12 @@
 import os
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import argparse
 import unidecode
 import pandas as pd
 import json
 from tqdm import tqdm
+import numpy as np
 
 STOPWORDS_FILE = 'all_stopwords.json'
 with open(STOPWORDS_FILE, encoding="utf8") as json_data:
@@ -77,6 +79,7 @@ def apply_manual_mappings(data_df, manual_mappings):
 
     data_df = data_df.map(map_text)
     return data_df
+
 
 #################
 # plot word cloud
@@ -324,6 +327,7 @@ def save_sentiment(predicted_sentiment, predicted_sentiment_filename):
     )
     predicted_sentiment_df.to_csv(predicted_sentiment_filename, index=False)
 
+
 def text_analysis(
         data_path,
         column,
@@ -418,35 +422,43 @@ def text_analysis(
     print("Top tfidf word plot saved to:", top_tfidf_words_plot_filename)
     print()
 
-    #groups_sets = []
-    #groups_sets += groups
-    #for i in range(1, len(groups) + 1):
-    #    for j in range(len(groups) - i):
-    #        groups_comb_list.append([groups[k] for k in range(j, j + i + 1)])
     if groups:
+        group_unique_vals = {}
         for group in groups:
-            grouped_words_counts = {}
-            grouped_words_tfidf = {}
+            group_unique_vals[group] = data_df[group].unique()
 
-            group_unique_vals = data_df[group].unique()
-            for val in group_unique_vals:
-                split = data_df[data_df[group] == val]
-                split_texts = split[column]
+        splits = {}
+        for group, unique_vals in group_unique_vals.items():
+            for val in unique_vals:
+                splits[(group, val)] = data_df[group] == val
 
+        for i in range(len(groups) - 1):
+            splits = concat_splits(splits)
+
+        # grouped_words_counts = populate({}, splits)
+        # grouped_words_tfidf = populate({}, splits)
+        grouped_words_counts = {}
+        grouped_words_tfidf = {}
+
+        for key, split_idcs in splits.items():
+            split = data_df[split_idcs]
+            split_texts = split[column]
+
+            if len(split_texts) > 0 and any(split_texts.str.len() > 0):
                 word_cloud_filename_val = add_prefix_to_filename(
-                    word_cloud_filename, [group, val]
+                    word_cloud_filename, key
                 )
                 frequent_words_filename_val = add_prefix_to_filename(
-                    frequent_words_filename, [group, val]
+                    frequent_words_filename, key
                 )
                 frequent_words_plot_filename_val = add_prefix_to_filename(
-                    frequent_words_plot_filename, [group, val]
+                    frequent_words_plot_filename, key
                 )
                 top_tfidf_words_filename_val = add_prefix_to_filename(
-                    top_tfidf_words_filename, [group, val]
+                    top_tfidf_words_filename, key
                 )
                 top_tfidf_words_plot_filename_val = add_prefix_to_filename(
-                    top_tfidf_words_plot_filename, [group, val]
+                    top_tfidf_words_plot_filename, key
                 )
 
                 print("Generating word cloud...")
@@ -496,26 +508,26 @@ def text_analysis(
                 print("Top tfidf word plot saved to:", top_tfidf_words_plot_filename_val)
                 print()
 
-                grouped_words_counts[val] = {w: int(c) for w, c in all_word_count_pair_list}
-                grouped_words_tfidf[val] = {w: int(c) for w, c in all_tfidf_pair_list}
+                grouped_words_counts[key[1::2]] = {w: int(c) for w, c in all_word_count_pair_list}
+                grouped_words_tfidf[key[1::2]] = {w: int(c) for w, c in all_tfidf_pair_list}
 
-            print("Saving grouped frequent words...")
-            group_frequent_words_filename = add_prefix_to_filename(
-                frequent_words_filename, group
-            )
-            with open(group_frequent_words_filename, 'w', encoding="utf8") as f:
-                json.dump(grouped_words_counts, f, ensure_ascii=False)
-            print("Frequent words saved to:", group_frequent_words_filename)
-            print()
+        print("Saving grouped frequent words...")
+        group_frequent_words_filename = add_prefix_to_filename(
+            frequent_words_filename, groups
+        )
+        with open(group_frequent_words_filename, 'w', encoding="utf8") as f:
+            json.dump(remap_keys_nested(grouped_words_counts), f, ensure_ascii=False)
+        print("Frequent words saved to:", group_frequent_words_filename)
+        print()
 
-            print("Saving grouped top tfidf words...")
-            group_top_tfidf_words_filename = add_prefix_to_filename(
-                top_tfidf_words_filename, group
-            )
-            with open(group_top_tfidf_words_filename, 'w', encoding="utf8") as f:
-                json.dump(grouped_words_tfidf, f, ensure_ascii=False)
-            print("Top tfidf words saved to:", group_top_tfidf_words_filename)
-            print()
+        print("Saving grouped top tfidf words...")
+        group_top_tfidf_words_filename = add_prefix_to_filename(
+            top_tfidf_words_filename, groups
+        )
+        with open(group_top_tfidf_words_filename, 'w', encoding="utf8") as f:
+            json.dump(remap_keys_nested(grouped_words_tfidf), f, ensure_ascii=False)
+        print("Top tfidf words saved to:", group_top_tfidf_words_filename)
+        print()
 
     print("Calculating topic model...")
     lda, predicted_topics = learn_topic_model(tfidf_data, num_topics)
@@ -555,6 +567,9 @@ def text_analysis(
             print()
 
 
+#######
+# Utils
+#######
 def format_filename(s):
     import string
     """Take a string and return a valid filename constructed from the string.
@@ -574,12 +589,62 @@ def format_filename(s):
     filename = filename.lower()
     return filename
 
+
 def add_prefix_to_filename(fn_path, prefix):
     split_path = list(os.path.split(fn_path))
-    if isinstance(prefix, list or tuple):
+    if isinstance(prefix, (list, tuple)):
         prefix = "_".join(prefix)
     split_path[-1] = format_filename(prefix) + "_" + split_path[-1]
     return os.path.join(*split_path)
+
+
+def concat_splits(splits):
+    # splits[(group, val)] = split
+    c_splits = {}
+    already_added = set()
+    for key, split in splits.items():
+        for o_key, o_split in splits.items():
+            if len(o_key) == 2:  # only group and val
+                if len(key) == 2 and key[0] == o_key[0] and key[1] == o_key[1]:
+                    c_splits[key] = split
+                    already_added.add("_".join(sorted(key)))
+                elif o_key[0] not in set(key[::2]):
+                    new_key = key + o_key
+                    new_key_sorted = "_".join(sorted(new_key))
+                    if new_key_sorted not in already_added:
+                        c_splits[new_key] = np.logical_and(
+                            split, o_split
+                        )
+                        already_added.add(new_key_sorted)
+    return c_splits
+
+
+def populate(dict, splits):
+    for key in splits:
+        prev_dict = dict
+        # only even indices elements, meaning only unique vals, not group names
+        for val in key[1::2]:
+            new_dict = prev_dict.get(val, {})
+            prev_dict[val] = new_dict
+            prev_dict = new_dict
+    return dict
+
+
+def remap_keys(mapping):
+    return [{'key': k, 'value': v} for k, v in mapping.items()]
+
+
+def remap_keys_nested(mapping):
+    nested = {}
+    for k, v in mapping.items():
+        prev_dict = nested
+        for g in k[1::2]:
+            if g not in prev_dict:
+                prev_dict[g] = {}
+            prev_dict = prev_dict[g]
+        prev_dict.update(v)
+    return nested
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
