@@ -5,7 +5,7 @@
 Clone repo:
 
 ```
-git clone git@github.com:tezzutezzu/design4emergency.git
+git clone git@github.com:w4nderlust/design4emergency.git
 ```
 
 Enter repo directory:
@@ -36,7 +36,6 @@ Download spaCy languages (needed for lemmatization):
 
 ```
 python -m spacy download it_core_news_sm
-python -m spacy download en_core_web_sm
 ```
 
 Install SentITA:
@@ -49,7 +48,6 @@ Download https://drive.google.com/uc?id=1IN-RZL-gpgzuosr-BknKtA6reDJ48XNI
 
 ```
 gdown https://drive.google.com/uc?id=1IN-RZL-gpgzuosr-BknKtA6reDJ48XNI
- mv test_sentita_lstm-cnn_wikiner_v1.h5 SentITA/sentita
 ```
 
 Move test_sentita_lstm-cnn_wikiner_v1.h5 inside SentITA/sentita folder
