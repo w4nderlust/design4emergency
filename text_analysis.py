@@ -167,21 +167,19 @@ def plot_top_words(word_count_pair_list, frequent_words_plot_filename):
     import seaborn as sns
 
     sns.set_style('whitegrid')
-    plt.xticks(fontsize=14)
-    plt.xticks(fontsize=14)
 
     words = [w[0] for w in word_count_pair_list]
     counts = [w[1] for w in word_count_pair_list]
-    x_pos = np.arange(len(words))
+    y_pos = np.arange(len(words))
 
-    plt.figure(2, figsize=(15, 16))
-    plt.margins(x=200)
-    plt.subplot(title='Most common words')
-    plt.subplots_adjust(left=0.2)
-    sns.barplot(counts, x_pos, palette='GnBu_r', orient="h")
-    plt.yticks(x_pos, words)
-    plt.ylabel('words')
-    plt.xlabel('counts')
+    fig, ax = plt.subplots()
+    ax.barh(y_pos, counts, align='center')
+    ax.set_xlabel('counts')
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(words)
+    ax.invert_yaxis()  # labels read top-to-bottom
+    ax.set_title('Most common words')
+    plt.tight_layout()
     plt.savefig(frequent_words_plot_filename)
 
 
