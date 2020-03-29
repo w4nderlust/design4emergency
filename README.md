@@ -72,6 +72,8 @@ Download `data.tsv` and place it into the `data` folder
 
 ## Usage
 
+### text_analysis
+
 Command:
 
 ```
@@ -148,7 +150,7 @@ optional arguments:
                         column
 ```
 
-## Outputs
+Outputs:
 
 The script outputs one directory for each column spacified, contaning the following files:
 
@@ -166,3 +168,51 @@ The script outputs one directory for each column spacified, contaning the follow
 - if groups is spcified:
   - `wordcloud_filename`, `frequent_words_filename`, `frequent_words_plot_filename`, `top_tfidf_words_filename` and `top_tfidf_words_plot_filename` will be repeated for each groups for each value, with a `[group]_[value]_` prefix
   - two additional JSON files per each group collecting word frequencies and tfidf for all values will be collected, namely `[group]_frequent_words.json` and `[group]_tfidf_words.json`.
+
+
+### manual_topic_classifier
+
+Command:
+
+```
+python manual_classifier.py data/data.tsv column_name column_name ... --manual_classes manual_classes.json
+```
+
+Example:
+
+```
+python manual_classifier.py "/home/piero/data/DfE_Dataset_Corriere_1600_Danilo - Form Responses 1.tsv" "Cosa ti ha convinto del fatto che rimanere in casa è necessario?" --manual_classes manual_classes.json
+```
+
+For more parameters check:
+
+```
+usage: manual_classifier.py [-h] -mc MANUAL_CLASSES [-l LANGUAGE] [-lm]
+                                  [-mm MANUAL_MAPPINGS]
+                                  [-pc PREDICTED_CLASSES_FILENAME]
+                                  [-o OUTPUT_PATH]
+                                  data_path columns [columns ...]
+
+This script creates a classifier from a bag of words using embeddings and uses
+it to predict classes
+
+positional arguments:
+  data_path             path to the data TSV
+  columns               columns to extract from TSV
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -mc MANUAL_CLASSES, --manual_classes MANUAL_CLASSES
+                        path to JSON file contaning manual classes
+  -l LANGUAGE, --language LANGUAGE
+                        language of the text in the data (for data cleaning
+                        purposes)
+  -lm, --lemmatize      performs lemmatization of all texts
+  -mm MANUAL_MAPPINGS, --manual_mappings MANUAL_MAPPINGS
+                        path to JSON file contaning manual mappings
+  -pc PREDICTED_CLASSES_FILENAME, --predicted_classes_filename PREDICTED_CLASSES_FILENAME
+                        path to save predicted classes for each datapoint to
+  -o OUTPUT_PATH, --output_path OUTPUT_PATH
+                        path that will contain all directories, one for each
+                        column
+```
