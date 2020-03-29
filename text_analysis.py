@@ -353,11 +353,13 @@ def text_analysis(
         num_topics,
         num_words,
         manual_mappings,
+        generate_word_cloud,
         word_cloud_filename,
         frequent_words_filename,
         frequent_words_plot_filename,
         top_tfidf_words_filename,
         top_tfidf_words_plot_filename,
+        predict_topics,
         topics_filename,
         predicted_topics_filename,
         ldavis_filename_prefix,
@@ -396,10 +398,11 @@ def text_analysis(
         print(data_df.head())
         print()
 
-    # print("Generating word cloud...")
-    # plot_word_cloud(data_df[column], word_cloud_filename, language)
-    # print("word_cloud saved to:", word_cloud_filename)
-    # print()
+    if generate_word_cloud:
+        print("Generating word cloud...")
+        plot_word_cloud(data_df[column], word_cloud_filename, language)
+        print("word_cloud saved to:", word_cloud_filename)
+        print()
 
     count_vectorizer, count_data = get_count_vectorizer_and_transformed_data(
         data_df[column], language, ngram_range
@@ -456,8 +459,6 @@ def text_analysis(
         for i in range(len(groups) - 1):
             splits = concat_splits(splits)
 
-        # grouped_words_counts = populate({}, splits)
-        # grouped_words_tfidf = populate({}, splits)
         grouped_words_counts = {}
         grouped_words_tfidf = {}
 
@@ -482,10 +483,11 @@ def text_analysis(
                     top_tfidf_words_plot_filename, key
                 )
 
-                # print("Generating word cloud...")
-                # plot_word_cloud(split_texts, word_cloud_filename_val, language)
-                # print("word_cloud saved to:", word_cloud_filename_val)
-                # print()
+                if generate_word_cloud:
+                    print("Generating word cloud...")
+                    plot_word_cloud(split_texts, word_cloud_filename_val, language)
+                    print("word_cloud saved to:", word_cloud_filename_val)
+                    print()
 
                 count_vectorizer, count_data = get_count_vectorizer_and_transformed_data(
                     split_texts, language, ngram_range
@@ -529,8 +531,12 @@ def text_analysis(
                 print("Top tfidf word plot saved to:", top_tfidf_words_plot_filename_val)
                 print()
 
-                grouped_words_counts[key[1::2]] = {w: int(c) for w, c in all_word_count_pair_list}
-                grouped_words_tfidf[key[1::2]] = {w: int(c) for w, c in all_tfidf_pair_list}
+                grouped_words_counts[key[1::2]] = {
+                    w: int(c) for w, c in all_word_count_pair_list
+                }
+                grouped_words_tfidf[key[1::2]] = {
+                    w: int(c) for w, c in all_tfidf_pair_list
+                }
 
         print("Saving grouped frequent words...")
         group_frequent_words_filename = add_prefix_to_filename(
@@ -550,25 +556,26 @@ def text_analysis(
         print("Top tfidf words saved to:", group_top_tfidf_words_filename)
         print()
 
-    # print("Calculating topic model...")
-    # lda, predicted_topics = learn_topic_model(tfidf_data, num_topics)
-    # print("Topics found via LDA:")
-    # print_topics(lda, tfidf_vectorizer, num_words)
-    # print("Saving topics...")
-    # save_topics(lda, tfidf_vectorizer, topics_filename)
-    # print("Topics saved to:", topics_filename)
-    # print()
+    if predict_topics:
+        print("Calculating topic model...")
+        lda, predicted_topics = learn_topic_model(tfidf_data, num_topics)
+        print("Topics found via LDA:")
+        print_topics(lda, tfidf_vectorizer, num_words)
+        print("Saving topics...")
+        save_topics(lda, tfidf_vectorizer, topics_filename)
+        print("Topics saved to:", topics_filename)
+        print()
 
-    # print("Saving predicted topics...")
-    # save_predicted_topics(predicted_topics, predicted_topics_filename)
-    # print("Predicted topics saved to:", predicted_topics_filename)
-    # print()
+        print("Saving predicted topics...")
+        save_predicted_topics(predicted_topics, predicted_topics_filename)
+        print("Predicted topics saved to:", predicted_topics_filename)
+        print()
 
-    # print("Generating LDA visualization...")
-    # visualize_topic_model(lda, count_data, tfidf_vectorizer,
-    #                       num_topics, ldavis_filename_prefix)
-    # print("LDA visualization saved to:", ldavis_filename_prefix)
-    # print()
+        print("Generating LDA visualization...")
+        visualize_topic_model(lda, count_data, tfidf_vectorizer,
+                              num_topics, ldavis_filename_prefix)
+        print("LDA visualization saved to:", ldavis_filename_prefix)
+        print()
 
     if predict_sentiment:
         if language == 'it':
@@ -740,6 +747,12 @@ if __name__ == '__main__':
         default=None
     )
     parser.add_argument(
+        '-gw',
+        '--generate_word_cloud',
+        action='store_true',
+        help='generates word cloud plots',
+    )
+    parser.add_argument(
         '-wc',
         '--word_cloud_filename',
         type=str,
@@ -775,14 +788,20 @@ if __name__ == '__main__':
         default='top_tfidf_words.png'
     )
     parser.add_argument(
-        '-tp',
+        '-pt',
+        '--predict_topics',
+        action='store_true',
+        help='learns topics and predicts them for each text (pretty slow)',
+    )
+    parser.add_argument(
+        '-tf',
         '--topics_filename',
         type=str,
         help='path to save frequent words to',
         default='topics.json'
     )
     parser.add_argument(
-        '-pt',
+        '-ptf',
         '--predicted_topics_filename',
         type=str,
         help='path to save predicted LDA topics for each datapoint to',
@@ -868,11 +887,13 @@ if __name__ == '__main__':
             num_topics=args.num_topics,
             num_words=args.num_words,
             manual_mappings=args.manual_mappings,
+            generate_word_cloud=args.generate_word_cloud,
             word_cloud_filename=word_cloud_filename,
             frequent_words_filename=frequent_words_filename,
             frequent_words_plot_filename=frequent_words_plot_filename,
             top_tfidf_words_filename=top_tfidf_words_filename,
             top_tfidf_words_plot_filename=top_tfidf_words_plot_filename,
+            predict_topics=args.predict_topics,
             topics_filename=topics_filename,
             predicted_topics_filename=predicted_topics_filename,
             ldavis_filename_prefix=ldavis_filename_prefix,
