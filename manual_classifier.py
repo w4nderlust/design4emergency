@@ -2,75 +2,9 @@ import argparse
 import json
 import os
 
-import numpy as np
-import pandas as pd
-from tqdm import tqdm
-
-from text_analysis import load_data, clean_data, lemmatize_text, apply_manual_mappings, format_filename, \
-    remove_stopwords
-from text_analysis import stopwords as all_stopwords
-
-stopwords = set(all_stopwords['it'])
-
-
-def load_embeddings(language):
-    from fasttext.util import download_model
-    from fasttext import load_model
-    download_model(language, if_exists='ignore')
-    embeddings = load_model('cc.' + language + '.300.bin')
-    return embeddings
-
-
-class Classifier:
-
-    def __init__(self, manual_classes, language):
-        self.embeddings = load_embeddings(language)
-        self.size = len(self.embeddings[self.embeddings.words[0]])
-        self.prototypes = {}
-        for class_name, word_list in manual_classes.items():
-            prototype_vector = np.zeros(self.size)
-            for word in word_list:
-                if word in self.embeddings:
-                    prototype_vector += self.embeddings[word]
-                else:
-                    print("Word", word, "not in embeddings, skipping it")
-            self.prototypes[class_name] = prototype_vector
-
-    def classify(self, text):
-        tokens = text.split()
-        text_vector = np.zeros(self.size)
-        for token in tokens:
-            text_vector += self.embeddings[token]
-
-        predictions = {}
-        for class_name, prototype_vector in self.prototypes.items():
-            # cosine similarity
-            predictions[class_name] = np.dot(text_vector, prototype_vector) / (
-                    np.linalg.norm(text_vector) * np.linalg.norm(prototype_vector)
-            )
-
-        return predictions
-
-
-#########
-# predict
-#########
-def predict(classifier, data_df):
-    predictions = []
-    texts = data_df.tolist()
-    for text in tqdm(texts):
-        predictions.append(classifier.classify(text))
-    return predictions
-
-
-##############
-# save classes
-##############
-def save_classes(predicted_classes, filename):
-    df = pd.DataFrame(
-        data=predicted_classes
-    )
-    df.to_csv(filename, index=False)
+from text_analysis import format_filename
+from utils import load_data, clean_data, remove_stopwords, lemmatize_text, \
+    apply_manual_mappings, Classifier, predict, save_classes
 
 
 def manual_classes_classifier(
