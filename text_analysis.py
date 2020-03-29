@@ -160,54 +160,58 @@ def text_analysis(
                     print("word_cloud saved to:", word_cloud_filename_val)
                     print()
 
-                count_vectorizer, count_data = get_count_vectorizer_and_transformed_data(
-                    split_texts, language, ngram_range
-                )
-                all_word_count_pair_list = most_frequent_words(
-                    count_data, count_vectorizer, count_data.shape[0] + 1
-                )
-                word_count_pair_list = all_word_count_pair_list[:num_words]
+                try:
+                    count_vectorizer, count_data = get_count_vectorizer_and_transformed_data(
+                        split_texts, language, ngram_range
+                    )
+                    all_word_count_pair_list = most_frequent_words(
+                        count_data, count_vectorizer, count_data.shape[0] + 1
+                    )
+                    word_count_pair_list = all_word_count_pair_list[:num_words]
 
-                tfidf_vectorizer, tfidf_data = get_tfidf_vectorizer_and_transformed_data(
-                    split_texts, language, ngram_range
-                )
-                all_tfidf_pair_list = most_frequent_words(
-                    tfidf_data, tfidf_vectorizer, tfidf_data.shape[0] + 1
-                )
-                tfidf_pair_list = all_tfidf_pair_list[:num_words]
+                    tfidf_vectorizer, tfidf_data = get_tfidf_vectorizer_and_transformed_data(
+                        split_texts, language, ngram_range
+                    )
+                    all_tfidf_pair_list = most_frequent_words(
+                        tfidf_data, tfidf_vectorizer, tfidf_data.shape[0] + 1
+                    )
+                    tfidf_pair_list = all_tfidf_pair_list[:num_words]
 
-                print("Saving frequent words...")
-                save_words(
-                    all_word_count_pair_list,
-                    frequent_words_filename_val
-                )
-                print("Frequent words saved to:", frequent_words_filename_val)
-                print()
+                    print("Saving frequent words...")
+                    save_words(
+                        all_word_count_pair_list,
+                        frequent_words_filename_val
+                    )
+                    print("Frequent words saved to:", frequent_words_filename_val)
+                    print()
 
-                print("Generating frequent word plot...")
-                plot_top_words(word_count_pair_list, frequent_words_plot_filename_val)
-                print("Frequent word plot saved to:", frequent_words_plot_filename_val)
-                print()
+                    print("Generating frequent word plot...")
+                    plot_top_words(word_count_pair_list, frequent_words_plot_filename_val)
+                    print("Frequent word plot saved to:", frequent_words_plot_filename_val)
+                    print()
 
-                print("Saving top tfidf words...")
-                save_words(
-                    all_tfidf_pair_list,
-                    top_tfidf_words_filename_val
-                )
-                print("Top tfidf words saved to:", top_tfidf_words_filename_val)
-                print()
+                    print("Saving top tfidf words...")
+                    save_words(
+                        all_tfidf_pair_list,
+                        top_tfidf_words_filename_val
+                    )
+                    print("Top tfidf words saved to:", top_tfidf_words_filename_val)
+                    print()
 
-                print("Generating top tfidf word plot...")
-                plot_top_words(tfidf_pair_list, top_tfidf_words_plot_filename_val)
-                print("Top tfidf word plot saved to:", top_tfidf_words_plot_filename_val)
-                print()
+                    print("Generating top tfidf word plot...")
+                    plot_top_words(tfidf_pair_list, top_tfidf_words_plot_filename_val)
+                    print("Top tfidf word plot saved to:", top_tfidf_words_plot_filename_val)
+                    print()
 
-                grouped_words_counts[key[1::2]] = {
-                    w: int(c) for w, c in all_word_count_pair_list
-                }
-                grouped_words_tfidf[key[1::2]] = {
-                    w: int(c) for w, c in all_tfidf_pair_list
-                }
+                    grouped_words_counts[key[1::2]] = {
+                        w: int(c) for w, c in all_word_count_pair_list
+                    }
+                    grouped_words_tfidf[key[1::2]] = {
+                        w: int(c) for w, c in all_tfidf_pair_list
+                    }
+                except:
+                    print("Error processing", key,
+                          "skipping it. texts are probably all stopwords")
 
         print("Saving grouped frequent words...")
         group_frequent_words_filename = add_prefix_to_filename(
