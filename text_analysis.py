@@ -8,7 +8,7 @@ import json
 from tqdm import tqdm
 import numpy as np
 
-STOPWORDS_FILE = 'all_stopwords.json'
+STOPWORDS_FILE = 'it_stopwords.json'
 with open(STOPWORDS_FILE, encoding="utf8") as json_data:
     stopwords = json.load(json_data)
 
@@ -377,10 +377,10 @@ def text_analysis(
         print(data_df.head())
         print()
 
-    print("Generating word cloud...")
-    plot_word_cloud(data_df[column], word_cloud_filename, language)
-    print("word_cloud saved to:", word_cloud_filename)
-    print()
+    # print("Generating word cloud...")
+    # plot_word_cloud(data_df[column], word_cloud_filename, language)
+    # print("word_cloud saved to:", word_cloud_filename)
+    # print()
 
     count_vectorizer, count_data = get_count_vectorizer_and_transformed_data(
         data_df[column], language, ngram_range
@@ -463,10 +463,10 @@ def text_analysis(
                     top_tfidf_words_plot_filename, key
                 )
 
-                print("Generating word cloud...")
-                plot_word_cloud(split_texts, word_cloud_filename_val, language)
-                print("word_cloud saved to:", word_cloud_filename_val)
-                print()
+                # print("Generating word cloud...")
+                # plot_word_cloud(split_texts, word_cloud_filename_val, language)
+                # print("word_cloud saved to:", word_cloud_filename_val)
+                # print()
 
                 count_vectorizer, count_data = get_count_vectorizer_and_transformed_data(
                     split_texts, language, ngram_range
@@ -531,25 +531,25 @@ def text_analysis(
         print("Top tfidf words saved to:", group_top_tfidf_words_filename)
         print()
 
-    print("Calculating topic model...")
-    lda, predicted_topics = learn_topic_model(tfidf_data, num_topics)
-    print("Topics found via LDA:")
-    print_topics(lda, tfidf_vectorizer, num_words)
-    print("Saving topics...")
-    save_topics(lda, tfidf_vectorizer, topics_filename)
-    print("Topics saved to:", topics_filename)
-    print()
+    # print("Calculating topic model...")
+    # lda, predicted_topics = learn_topic_model(tfidf_data, num_topics)
+    # print("Topics found via LDA:")
+    # print_topics(lda, tfidf_vectorizer, num_words)
+    # print("Saving topics...")
+    # save_topics(lda, tfidf_vectorizer, topics_filename)
+    # print("Topics saved to:", topics_filename)
+    # print()
 
-    print("Saving predicted topics...")
-    save_predicted_topics(predicted_topics, predicted_topics_filename)
-    print("Predicted topics saved to:", predicted_topics_filename)
-    print()
+    # print("Saving predicted topics...")
+    # save_predicted_topics(predicted_topics, predicted_topics_filename)
+    # print("Predicted topics saved to:", predicted_topics_filename)
+    # print()
 
-    print("Generating LDA visualization...")
-    visualize_topic_model(lda, count_data, tfidf_vectorizer,
-                          num_topics, ldavis_filename_prefix)
-    print("LDA visualization saved to:", ldavis_filename_prefix)
-    print()
+    # print("Generating LDA visualization...")
+    # visualize_topic_model(lda, count_data, tfidf_vectorizer,
+    #                       num_topics, ldavis_filename_prefix)
+    # print("LDA visualization saved to:", ldavis_filename_prefix)
+    # print()
 
     if predict_sentiment:
         if language == 'it':
