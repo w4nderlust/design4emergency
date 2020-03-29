@@ -518,7 +518,7 @@ def text_analysis(
             frequent_words_filename, groups
         )
         with open(group_frequent_words_filename, 'w', encoding="utf8") as f:
-            json.dump(remap_keys_nested(grouped_words_counts), f, ensure_ascii=False)
+            json.dump(remap_keys(grouped_words_counts, groups), f, ensure_ascii=False)
         print("Frequent words saved to:", group_frequent_words_filename)
         print()
 
@@ -527,7 +527,7 @@ def text_analysis(
             top_tfidf_words_filename, groups
         )
         with open(group_top_tfidf_words_filename, 'w', encoding="utf8") as f:
-            json.dump(remap_keys_nested(grouped_words_tfidf), f, ensure_ascii=False)
+            json.dump(remap_keys(grouped_words_tfidf, groups), f, ensure_ascii=False)
         print("Top tfidf words saved to:", group_top_tfidf_words_filename)
         print()
 
@@ -632,21 +632,30 @@ def populate(dict, splits):
     return dict
 
 
-def remap_keys(mapping):
-    return [{'key': k, 'value': v} for k, v in mapping.items()]
-
-
-def remap_keys_nested(mapping):
-    nested = {}
+def remap_keys(mapping, groups):
+    entries = []
     for k, v in mapping.items():
-        prev_dict = nested
-        for g in k[1::2]:
-            if g not in prev_dict:
-                prev_dict[g] = {}
-            prev_dict = prev_dict[g]
-        prev_dict.update(v)
-    return nested
+        entry = {}
+        for i in range(len(k)):
+            entry[groups[i]] = k[i]
+        entry['val'] = v
+        entries.append(entry)
+    return entries
 
+
+# def remap_keys_nested(mapping):
+#     nested = {}
+#     for k, v in mapping.items():
+#         prev_dict = nested
+#         for g in k:
+#             if g not in prev_dict:
+#                 prev_dict[g] = {}
+#             prev_dict = prev_dict[g]
+#         prev_dict.update(v)
+#     return nested
+#
+# def remap_keys_slash(mapping):
+#     return {'/'.join(k): v for k, v in mapping.items()}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
