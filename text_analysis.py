@@ -36,11 +36,23 @@ def clean_data(data_df):
     # fill empty rows with empty string
     data_df.fillna('', inplace=True)
     # Remove punctuation
-    data_df = data_df.map(lambda x: re.sub('[,.!?]', '', x))
+    data_df = data_df.map(lambda x: re.sub('[,.!?]', ' ', x))
     data_df = data_df.map(lambda x: re.sub('\s+', ' ', x))
     # Convert the titles to lowercase
     data_df = data_df.map(lambda x: x.strip().lower())
 
+    return data_df
+
+
+##################
+# remove stopwords
+##################
+def remove_stopwords(data_df, language):
+    data_df = data_df.apply(
+        lambda x: ' '.join(
+            [word for word in x.split() if word not in stopwords[language]]
+        )
+    )
     return data_df
 
 
@@ -58,7 +70,10 @@ def lemmatize_text(data_df, language):
     nlp = spacy.load(language_map[language])
 
     def text2lemmas(text):
-        return ' '.join(token.lemma_ for token in nlp(text))
+        processed_text = nlp(text)
+        lemmas = [token.lemma_ for token in processed_text]
+        lemamtized_text = ' '.join(lemmas)
+        return lemamtized_text
 
     data_df = data_df.map(text2lemmas)
     return data_df
@@ -358,6 +373,12 @@ def text_analysis(
     print("Cleaning data...")
     data_df[column] = clean_data(data_df[column])
     print("Clean data sample")
+    print(data_df.head())
+    print()
+
+    print("Removing stop words from data...")
+    data_df[column] = remove_stopwords(data_df[column], language)
+    print("Data sample")
     print(data_df.head())
     print()
 

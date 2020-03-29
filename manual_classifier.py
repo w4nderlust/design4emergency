@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from text_analysis import load_data, clean_data, lemmatize_text, apply_manual_mappings, format_filename
+from text_analysis import load_data, clean_data, lemmatize_text, apply_manual_mappings, format_filename, \
+    remove_stopwords
 from text_analysis import stopwords as all_stopwords
 
 stopwords = set(all_stopwords['it'])
@@ -101,9 +102,7 @@ def manual_classes_classifier(
     print()
 
     print("Removing stopwors...")
-    data_df[column] = data_df[column].apply(
-        lambda x: ' '.join([word for word in x.split() if word not in stopwords])
-    )
+    data_df = remove_stopwords(data_df, language)
     print("Data sample")
     print(data_df.head())
     print()
