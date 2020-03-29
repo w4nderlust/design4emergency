@@ -807,36 +807,36 @@ if __name__ == '__main__':
         exit(-1)
 
     for column in args.columns:
-        column_dir = format_filename(column)
+        column_dir = os.path.join(args.output_path, format_filename(column))
         if not os.path.exists(column_dir):
             os.makedirs(column_dir)
 
         word_cloud_filename = os.path.join(
-            args.output_path, column_dir, args.word_cloud_filename
+            column_dir, args.word_cloud_filename
         )
         frequent_words_filename = os.path.join(
-            args.output_path, column_dir, args.frequent_words_filename
+            column_dir, args.frequent_words_filename
         )
         frequent_words_plot_filename = os.path.join(
-            args.output_path, column_dir, args.frequent_words_plot_filename
+            column_dir, args.frequent_words_plot_filename
         )
         top_tfidf_words_filename = os.path.join(
-            args.output_path, column_dir, args.top_tfidf_words_filename
+            column_dir, args.top_tfidf_words_filename
         )
         top_tfidf_words_plot_filename = os.path.join(
-            args.output_path, column_dir, args.top_tfidf_words_plot_filename
+            column_dir, args.top_tfidf_words_plot_filename
         )
         topics_filename = os.path.join(
-            args.output_path, column_dir, args.topics_filename
+            column_dir, args.topics_filename
         )
         predicted_topics_filename = os.path.join(
-            args.output_path, column_dir, args.predicted_topics_filename
+            column_dir, args.predicted_topics_filename
         )
         ldavis_filename_prefix = os.path.join(
-            args.output_path, column_dir, args.ldavis_filename_prefix
+            column_dir, args.ldavis_filename_prefix
         )
         predicted_sentiment_filename = os.path.join(
-            args.output_path, column_dir, args.predicted_sentiment_filename
+            column_dir, args.predicted_sentiment_filename
         )
 
         text_analysis(
