@@ -19,7 +19,7 @@ PARALLEL_DOTS_KEY = ''
 # load data
 ###########
 # Read data into dataframe
-def load_data(data_path, column, groups):
+def load_data(data_path, column, groups=None):
     data_df = pd.read_csv(data_path, sep='\t', encoding='utf8')
     data_df = data_df.rename(columns={c: c.strip() for c in data_df.columns})
     data_df = data_df[[column] + (groups if groups else [])]
