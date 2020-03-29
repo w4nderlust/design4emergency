@@ -36,7 +36,7 @@ def manual_classes_classifier(
     print()
 
     print("Removing stopwors...")
-    data_df = remove_stopwords(data_df, language)
+    data_df[column] = remove_stopwords(data_df[column], language)
     print("Data sample")
     print(data_df.head())
     print()
