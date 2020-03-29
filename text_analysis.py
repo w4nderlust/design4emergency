@@ -372,7 +372,7 @@ def text_analysis(
 
     if manual_mappings:
         print("Applying manual mappings...")
-        data_df = apply_manual_mappings(data_df, manual_mappings)
+        data_df[column] = apply_manual_mappings(data_df[column], manual_mappings)
         print("Manually mapped data sample")
         print(data_df.head())
         print()
