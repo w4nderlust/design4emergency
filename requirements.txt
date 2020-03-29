@@ -10,4 +10,4 @@ tensorflow==1.15.2
 spacy
 gdown
 unidecode
-fasttext
+git+https://github.com/facebookresearch/fastText.git
