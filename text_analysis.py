@@ -1,18 +1,19 @@
 import os
 
+from db_utils import connect_db, upload_db
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from utils import load_data, clean_data, remove_stopwords, lemmatize_text, apply_manual_mappings, \
     plot_word_cloud, get_count_vectorizer_and_transformed_data, get_tfidf_vectorizer_and_transformed_data, \
     most_frequent_words, save_words, plot_top_words, learn_topic_model, print_topics, save_topics, \
     save_predicted_topics, visualize_topic_model, predict_sentiment_with_paralleldots, predict_sentiment_with_sentita, \
-    save_sentiment
+    save_sentiment, remap_to_dict
 
 import argparse
 import unidecode
 import json
 import numpy as np
-
 
 def text_analysis(
         data_path,
@@ -36,6 +37,8 @@ def text_analysis(
         ldavis_filename_prefix,
         predict_sentiment,
         predicted_sentiment_filename,
+        should_upload_db,
+        account_key_path
 ):
     print("Loading data...")
     data_df = load_data(data_path, column, groups)
@@ -99,6 +102,19 @@ def text_analysis(
     print("Frequent words saved to:", frequent_words_filename)
     print()
 
+    if should_upload_db:
+        db_client = connect_db(account_key_path)
+    else:
+        db_client = None
+
+    if should_upload_db:
+        print("Uploading frequent words to db...")
+        upload_db(db_client, 'frequent_words', {
+            column: {w: int(c) for w, c in word_count_pair_list}
+        })
+        print('Done')
+        print()
+
     print("Generating frequent word plot...")
     plot_top_words(word_count_pair_list, frequent_words_plot_filename)
     print("Frequent word plot saved to:", frequent_words_plot_filename)
@@ -111,6 +127,14 @@ def text_analysis(
     )
     print("Top tfidf words saved to:", top_tfidf_words_filename)
     print()
+
+    if should_upload_db:
+        print("Uploading frequent words to db...")
+        upload_db(db_client, 'top_tfidf', {
+            column: {w: int(c) for w, c in tfidf_pair_list}
+        })
+        print('Done')
+        print()
 
     print("Generating top tfidf word plot...")
     plot_top_words(tfidf_pair_list, top_tfidf_words_plot_filename)
@@ -217,19 +241,37 @@ def text_analysis(
         group_frequent_words_filename = add_prefix_to_filename(
             frequent_words_filename, groups
         )
+        remapped_grouped_words_counts = remap_keys(grouped_words_counts, groups)
         with open(group_frequent_words_filename, 'w', encoding="utf8") as f:
-            json.dump(remap_keys(grouped_words_counts, groups), f, ensure_ascii=False)
+            json.dump(remapped_grouped_words_counts, f, ensure_ascii=False)
         print("Frequent words saved to:", group_frequent_words_filename)
         print()
+
+        if should_upload_db:
+            print("Uploading grouped_words_counts to db...")
+            upload_db(db_client, 'grouped_words_counts', {
+                column: remap_to_dict(remapped_grouped_words_counts)
+            })
+            print('Done')
+            print()
 
         print("Saving grouped top tfidf words...")
         group_top_tfidf_words_filename = add_prefix_to_filename(
             top_tfidf_words_filename, groups
         )
+        remapped_grouped_words_tfidf = remap_keys(grouped_words_tfidf, groups)
         with open(group_top_tfidf_words_filename, 'w', encoding="utf8") as f:
-            json.dump(remap_keys(grouped_words_tfidf, groups), f, ensure_ascii=False)
+            json.dump(remapped_grouped_words_tfidf, f, ensure_ascii=False)
         print("Top tfidf words saved to:", group_top_tfidf_words_filename)
         print()
+
+        if should_upload_db:
+            print("Uploading grouped_words_tfidf to db...")
+            upload_db(db_client, 'grouped_words_tfidf', {
+                column: remap_to_dict(remapped_grouped_words_tfidf)
+            })
+            print('Done')
+            print()
 
     if predict_topics:
         print("Calculating topic model...")
@@ -509,6 +551,19 @@ if __name__ == '__main__':
         help='path that will contain all directories, one for each column',
         default='.'
     )
+    parser.add_argument(
+        '-u',
+        '--should_upload_db',
+        action='store_true',
+        help='uploads to db',
+    )
+    parser.add_argument(
+        '-akp',
+        '--account_key_path',
+        type=str,
+        help='path to che account key JSON file',
+        default=''
+    )
     args = parser.parse_args()
 
     ngram_range = (1, 1)
@@ -573,5 +628,7 @@ if __name__ == '__main__':
             predicted_topics_filename=predicted_topics_filename,
             ldavis_filename_prefix=ldavis_filename_prefix,
             predict_sentiment=args.predict_sentiment,
-            predicted_sentiment_filename=predicted_sentiment_filename
+            predicted_sentiment_filename=predicted_sentiment_filename,
+            should_upload_db=args.should_upload_db,
+            account_key_path=args.account_key_path,
         )

@@ -330,3 +330,15 @@ def save_classes(predicted_classes, filename):
         data=predicted_classes
     )
     df.to_csv(filename, index=False)
+
+def remap_to_dict(remapped):
+    d = {}
+    for elem in remapped:
+        groups = set(elem.keys())
+        groups.remove("val")
+        group_val_strings = []
+        for group in sorted(list(groups)):
+            group_val_strings.append("{}:{}".format(group, elem[group]))
+        new_key = "__".join(group_val_strings)
+        d[new_key] = elem
+    return d
