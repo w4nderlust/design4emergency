@@ -264,7 +264,7 @@ def predict_sentiment_with_sentita(data_df):
     batch_size = 64
     for i in tqdm(range(0, len(texts), batch_size)):
         text_batch = texts[i:i + batch_size]
-        polarities = calculate_polarity(text_batch)
+        _, polarities = calculate_polarity(text_batch)
         for elem in polarities:
             predicted_sentiment['positive'].append(elem[0])
             predicted_sentiment['negative'].append(elem[1])
@@ -330,6 +330,7 @@ def save_classes(predicted_classes, filename):
         data=predicted_classes
     )
     df.to_csv(filename, index=False)
+
 
 def remap_to_dict(remapped):
     d = {}

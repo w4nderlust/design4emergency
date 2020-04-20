@@ -2,6 +2,9 @@ import argparse
 import json
 import os
 
+import pandas as pd
+
+from db_utils import connect_db, upload_db
 from text_analysis import format_filename
 from utils import load_data, clean_data, remove_stopwords, lemmatize_text, \
     apply_manual_mappings, Classifier, predict, save_classes
@@ -14,7 +17,9 @@ def manual_classes_classifier(
         lemmatize,
         manual_mappings,
         manual_classes,
-        predicted_classes_filename
+        predicted_classes_filename,
+        should_upload_db,
+        account_key_path
 ):
     print("Build classifier...")
     with open(manual_classes, encoding="utf8") as json_data:
@@ -60,6 +65,17 @@ def manual_classes_classifier(
     save_classes(predicted_classes, predicted_classes_filename)
     print("Predicted classes saved to:", predicted_classes_filename)
     print()
+
+    if should_upload_db:
+        db_client = connect_db(account_key_path)
+        print("Uploading predicted classes to db...")
+        upload_db(db_client, 'predicted_classes', {
+            column: json.loads(pd.DataFrame(predicted_classes).to_json(
+                orient='index', force_ascii=False
+            ))
+        })
+        print('Done')
+        print()
 
 
 if __name__ == '__main__':
@@ -120,6 +136,19 @@ if __name__ == '__main__':
         help='path that will contain all directories, one for each column',
         default='.'
     )
+    parser.add_argument(
+        '-u',
+        '--should_upload_db',
+        action='store_true',
+        help='uploads to db',
+    )
+    parser.add_argument(
+        '-akp',
+        '--account_key_path',
+        type=str,
+        help='path to che account key JSON file',
+        default=''
+    )
     args = parser.parse_args()
 
     for column in args.columns:
@@ -138,5 +167,7 @@ if __name__ == '__main__':
             args.lemmatize,
             args.manual_mappings,
             args.manual_classes,
-            predicted_classes_filename
+            predicted_classes_filename,
+            args.should_upload_db,
+            args.account_key_path
         )

@@ -14,6 +14,8 @@ import argparse
 import unidecode
 import json
 import numpy as np
+import pandas as pd
+
 
 def text_analysis(
         data_path,
@@ -288,6 +290,16 @@ def text_analysis(
         print("Predicted topics saved to:", predicted_topics_filename)
         print()
 
+        if should_upload_db:
+            print("Uploading predicted topics to db...")
+            upload_db(db_client, 'predicted_topics', {
+                column: json.loads(pd.DataFrame(predicted_topics).to_json(
+                    orient='index', force_ascii=False
+                ))
+            })
+            print('Done')
+            print()
+
         print("Generating LDA visualization...")
         visualize_topic_model(lda, count_data, tfidf_vectorizer,
                               num_topics, ldavis_filename_prefix)
@@ -301,12 +313,33 @@ def text_analysis(
             save_sentiment(predicted_sentiment, predicted_sentiment_filename)
             print("Predict sentiment saved to:", predicted_sentiment_filename)
             print()
+
+            if should_upload_db:
+                print("Uploading predicted sentiment to db...")
+                upload_db(db_client, 'predicted_sentiment', {
+                    column: json.loads(pd.DataFrame(predicted_sentiment).to_json(
+                        orient='index', force_ascii=False
+                    ))
+                })
+                print('Done')
+                print()
+
         elif language == 'en':
             print("Predict sentiment...")
             predicted_sentiment = predict_sentiment_with_paralleldots(data_df)
             save_sentiment(predicted_sentiment, predicted_sentiment_filename)
             print("Predict sentiment saved to:", predicted_sentiment_filename)
             print()
+
+            if should_upload_db:
+                print("Uploading predicted sentiment to db...")
+                upload_db(db_client, 'predicted_sentiment', {
+                    column: json.loads(pd.DataFrame(predicted_sentiment).to_json(
+                        orient='index', force_ascii=False
+                    ))
+                })
+                print('Done')
+                print()
         else:
             print("Sentiment analysis on {} language is not supported")
             print()
